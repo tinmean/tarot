@@ -255,60 +255,117 @@
 
     /* ===== 手機版排版修正 ===== */
     @media (max-width: 768px) {
-      body { padding: 15px; }
+      /* 調整容器 padding 以爭取空間 */
+      body { padding: 10px; }
       h1 { font-size: 1.25rem; }
       .controls { gap: 8px; }
       
       input[type="text"], select, button { font-size: 14px; width: 100%; }
-      input[type="text"] { width: calc(100% - 22px); } /* 扣除 padding border */
+      input[type="text"] { width: calc(100% - 22px); }
 
-      .card { padding: 10px 6px; min-height: 100px; }
-      .card-name { font-size: 16px; }
-      .position-label { font-size: 11px; }
-
-      /* 一般牌陣轉單欄 */
-      .spread-three, .spread-five, .spread-five.choice {
-        grid-template-columns: 1fr;
-        grid-template-areas: initial; /* 取消二擇一的特殊版面，手機直接直排 */
+      /* 卡片縮小適應手機 Grid */
+      .card { 
+        padding: 8px 4px; 
+        min-height: 90px; 
       }
-      /* 賽爾特十字在手機上也改為直排顯示，因為空間太小 */
+      .card-name { 
+        font-size: 14px; 
+        margin-bottom: 4px; 
+        white-space: nowrap; /* 避免換行導致版面過長 */
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+      }
+      .position-label { font-size: 10px; padding: 2px 4px; }
+      .orientation { font-size: 11px; }
+      .type { display: none; } /* 手機版隱藏類別，保持版面簡潔，點開才看 */
+
+      /* 1. 單張牌 */
+      .spread-one { grid-template-columns: 1fr; }
+
+      /* 2. 三張牌：手機版改回橫向排列 (3欄) */
+      .spread-three {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      /* 3. 五張牌 (通用/無視論/馬蹄鐵/盲點)：強制 5欄並排 */
+      /* 說明：為了讓手機版顯示五張並排，字體必須縮小且移除部分描述 */
+      .spread-five:not(.choice) {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 3px; /* 極窄間距 */
+      }
+      
+      /* 針對五張並排的極限壓縮樣式 */
+      .spread-five:not(.choice) .card {
+         padding: 6px 2px;
+         min-height: 80px;
+      }
+      .spread-five:not(.choice) .card-name {
+         font-size: 11px; /* 縮小字體 */
+         margin-bottom: 2px;
+         white-space: normal; /* 允許換行 */
+         line-height: 1.1;
+      }
+      /* 隱藏 "正位/逆位" 文字，依靠顏色識別 */
+      .spread-five:not(.choice) .orientation {
+         display: none; 
+      }
+      /* 隱藏或極簡化位置標籤 */
+      .spread-five:not(.choice) .position-label {
+         font-size: 9px;
+         padding: 1px 2px;
+         white-space: nowrap;
+         overflow: hidden;
+         text-overflow: ellipsis;
+         max-width: 100%;
+      }
+
+      /* 4. 五張牌 (二擇一)：恢復特殊形狀 */
+      .spread-five.choice {
+        grid-template-columns: 1fr 0.4fr 1fr; /* 左右寬，中間窄 */
+        grid-template-areas:
+          "a1 . b1"
+          "a2 . b2"
+          ". c .";
+        gap: 8px;
+      }
+      /* 確保 Grid Area 對應正確 */
+      .spread-five.choice .c1 { grid-area: a1; margin: 0; }
+      .spread-five.choice .c2 { grid-area: a2; margin: 0; }
+      .spread-five.choice .c3 { grid-area: b1; margin: 0; }
+      .spread-five.choice .c4 { grid-area: b2; margin: 0; }
+      .spread-five.choice .c5 { grid-area: c; margin: 0; }
+
+      /* 5. 賽爾特十字：手機版維持直列 (過於複雜無法塞入小螢幕) */
       .spread-celtic {
         grid-template-columns: 1fr;
         grid-template-areas: initial;
       }
-      /* 讓賽爾特的特殊位置恢復正常流 */
       .spread-celtic .c1, .spread-celtic .c2, .spread-celtic .c3, 
       .spread-celtic .c4, .spread-celtic .c5, .spread-celtic .c6,
       .spread-celtic .c7, .spread-celtic .c8, .spread-celtic .c9, .spread-celtic .c10 {
         grid-area: auto;
-        transform: none; /* 取消旋轉 */
+        transform: none;
         margin: 0;
       }
-      /* 提示使用者手機版已簡化 */
       .spread-celtic::before {
-        content: "（手機版切換為列表顯示）";
+        content: "（手機版優化為列表顯示）";
         display: block;
         color: #888;
         font-size: 12px;
-        margin-bottom: 10px;
+        margin-bottom: 5px;
       }
 
-      /* 重點修正：十二張圓盤 */
+      /* 6. 十二張圓盤：縮放適應 */
       .spread-twelve.circle {
-        /* 使用絕對置中技巧：
-           1. left: 50% 讓容器起始點移動到畫面正中間
-           2. margin-left: -380px (寬度的一半) 將容器拉回，使其正中心對準畫面中心
-           這樣無論縮放比例多少，圓盤都會在畫面正中央
-        */
         width: 760px;
         position: relative;
         left: 50%;
         margin-left: -380px;
-        
-        transform: scale(0.48); /* 稍微縮小以適應手機 */
+        transform: scale(0.42); /* 再縮小一點確保不切邊 */
         transform-origin: top center;
-        margin-bottom: -350px; /* 修正縮放後下方留白 */
-        margin-top: 10px;
+        margin-bottom: -400px;
+        margin-top: 20px;
       }
     }
   </style>
