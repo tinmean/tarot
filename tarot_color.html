@@ -81,21 +81,42 @@
       font-size: 14px;
     }
 
+    button {
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+      border: none;
+    }
+
     button#drawBtn {
       width: 100%;
       padding: 14px;
       background: var(--accent-color);
       color: #1a1a2e;
-      border: none;
       border-radius: 10px;
-      font-weight: bold;
-      cursor: pointer;
       font-size: 16px;
-      transition: all 0.3s;
       margin-top: 5px;
     }
 
     button#drawBtn:hover { transform: scale(1.02); box-shadow: 0 0 20px var(--accent-color); }
+
+    /* 歷史紀錄按鈕樣式 */
+    .history-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-color);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .btn-small:hover { background: rgba(255, 255, 255, 0.2); color: white; }
+    .btn-danger:hover { background: #c0392b; color: white; border-color: #c0392b; }
 
     /* 牌陣展示區域 */
     .spread-viewport {
@@ -116,7 +137,6 @@
 
     .spread-area { position: relative; }
 
-    /* 排列方式 */
     .layout-linear {
       display: flex;
       gap: 12px;
@@ -170,7 +190,6 @@
       font-weight: bold;
     }
 
-    /* 複雜陣型寬高 */
     .spread-area.layout-custom { width: 550px; height: 550px; }
     .spread-area.layout-circle { width: 520px; height: 520px; }
     
@@ -243,6 +262,11 @@
 
   <div class="history-section">
     <label>歷史占卜紀錄</label>
+    <div class="history-controls">
+      <button onclick="copyLatestHistory()" class="btn-small">複製最新</button>
+      <button onclick="copyAllHistory()" class="btn-small">複製全部</button>
+      <button onclick="clearHistory()" class="btn-small btn-danger">清除紀錄</button>
+    </div>
     <textarea id="history" rows="6" readonly></textarea>
   </div>
 
@@ -265,11 +289,8 @@
       { name: "錢幣", code: "pents" }
     ];
 
-    // 牌陣配置資料庫
     const SPREAD_CONFIG = {
-      "1": {
-        "one": { type: 'linear', labels: ['啟示'] }
-      },
+      "1": { "one": { type: 'linear', labels: ['啟示'] } },
       "3": {
         "ppf": { type: 'linear', labels: ['過去', '現在', '未來'] },
         "spa": { type: 'linear', labels: ['現況', '問題', '建議'] },
@@ -280,9 +301,7 @@
         "choice": { type: 'linear', labels: ['選項A', '趨勢A', '選項B', '趨勢B', '建議'] },
         "relation": { type: 'linear', labels: ['本人狀態➊', '我方態度➋', '對方狀態➌', '對方態度➍', '可能結果➎'] }
       },
-      "7": {
-        "weekly": { type: 'linear', labels: ['週一', '週二', '週三', '週四', '週五', '週六', '週日'] }
-      },
+      "7": { "weekly": { type: 'linear', labels: ['週一', '週二', '週三', '週四', '週五', '週六', '週日'] } },
       "10": {
         "celtic": { 
           type: 'custom', 
@@ -295,29 +314,21 @@
         }
       },
       "12": {
-        "houses": { 
-          type: 'circle', 
-          labels: ['1.命宮/自我', '2.財帛/財運', '3.兄弟/溝通', '4.田宅/家庭', '5.子女/戀愛', '6.奴僕/健康', '7.夫妻/伴侶', '8.疾厄/轉化', '9.遷移/高等', '10.官祿/事業', '11.福德/社交', '12.相貌/潛意識'] 
-        },
-        "months": {
-          type: 'circle',
-          labels: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
-        }
+        "houses": { type: 'circle', labels: ['1.命宮/自我', '2.財帛/財運', '3.兄弟/溝通', '4.田宅/家庭', '5.子女/戀愛', '6.奴僕/健康', '7.夫妻/伴侶', '8.疾厄/轉化', '9.遷移/高等', '10.官祿/事業', '11.福德/社交', '12.相貌/潛意識'] },
+        "months": { type: 'circle', labels: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'] }
       }
     };
 
     const SPREAD_NAMES = {
       "one": "單張占卜", "ppf": "過去/現在/未來", "spa": "現況/問題/建議", "bms": "身/心/靈",
-      "neglect": "五張無視論 (橫向無定義)", "choice": "二擇一牌陣", "relation": "感情關係狀態陣",
-      "weekly": "週運勢 (週一至週日)", "celtic": "賽爾特十字 (10張)", "houses": "十二宮位 (命宮修正版)", "months": "十二個月運勢"
+      "neglect": "五張無視論", "choice": "二擇一牌陣", "relation": "感情關係狀態陣",
+      "weekly": "週運勢", "celtic": "賽爾特十字", "houses": "十二宮位", "months": "十二個月運勢"
     };
 
-    // 動態更新牌陣下拉選單
     function updateSpreadVariants() {
       const count = document.getElementById('cardCount').value;
       const variantSelect = document.getElementById('spreadVariant');
       variantSelect.innerHTML = '';
-      
       const options = SPREAD_CONFIG[count];
       for (let key in options) {
         const opt = document.createElement('option');
@@ -329,11 +340,7 @@
 
     function getDeck(incMajor, incMinor) {
       let deck = [];
-      if (incMajor) {
-        MAJOR_NAMES.forEach((name, i) => {
-          deck.push({ name, file: `maj${String(i).padStart(2, '0')}.jpg` });
-        });
-      }
+      if (incMajor) MAJOR_NAMES.forEach((name, i) => deck.push({ name, file: `maj${String(i).padStart(2, '0')}.jpg` }));
       if (incMinor) {
         SUITS.forEach(suit => {
           for (let i = 1; i <= 14; i++) {
@@ -345,6 +352,45 @@
       return deck;
     }
 
+    // 輔助複製函式
+    function copyToClipboard(text) {
+      const el = document.createElement('textarea');
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      // 提示（取代 alert）
+      const btn = document.activeElement;
+      const originalText = btn.innerText;
+      btn.innerText = "已複製！";
+      setTimeout(() => { btn.innerText = originalText; }, 1500);
+    }
+
+    function copyAllHistory() {
+      const historyText = document.getElementById('history').value;
+      if (!historyText) return;
+      copyToClipboard(historyText);
+    }
+
+    function copyLatestHistory() {
+      const historyText = document.getElementById('history').value;
+      if (!historyText) return;
+      // 依據雙換行符號切割（我們紀錄結尾是 \n\n）
+      const entries = historyText.split(/\n\n+/);
+      if (entries.length > 0 && entries[0].trim() !== "") {
+        copyToClipboard(entries[0].trim());
+      }
+    }
+
+    function clearHistory() {
+      if (document.getElementById('history').value === "") return;
+      const confirmClear = window.confirm("確定要清除所有占卜紀錄嗎？此動作無法復原。");
+      if (confirmClear) {
+        document.getElementById('history').value = "";
+      }
+    }
+
     function draw() {
       const incMajor = document.getElementById('incMajor').checked;
       const incMinor = document.getElementById('incMinor').checked;
@@ -354,14 +400,12 @@
       
       if (!variantKey) return;
       const config = SPREAD_CONFIG[count][variantKey];
-
       let deck = getDeck(incMajor, incMinor);
       if (deck.length < config.labels.length) {
         alert("牌數不足，請檢查大牌/小牌設定！");
         return;
       }
 
-      // 洗牌
       for (let i = deck.length - 1; i > 0; i--) {
         const j = window.crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
         [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -373,7 +417,6 @@
       spreadArea.className = `spread-area layout-${config.type}`;
 
       let results = [];
-
       config.labels.forEach((label, i) => {
         const cardData = deck[i];
         const isRev = allowRev && (window.crypto.getRandomValues(new Uint8Array(1))[0] > 127);
@@ -389,7 +432,6 @@
           slot.style.top = c.y + 'px';
           if (c.z) slot.style.zIndex = c.z;
         } else if (config.type === 'circle') {
-          // 命宮修正：9 點鐘方向起點 (180度)，逆時針
           const angle = 180 + (i * 30);
           const r = 185; 
           const centerX = 210, centerY = 185;
@@ -463,7 +505,6 @@
       }
 
       const availableWidth = viewport.offsetWidth - 20;
-
       if (availableWidth < baseWidth) {
         const scale = availableWidth / baseWidth;
         container.style.transform = `scale(${scale})`;
@@ -477,11 +518,7 @@
     window.addEventListener('resize', autoScale);
     document.getElementById('cardCount').addEventListener('change', updateSpreadVariants);
     document.getElementById('drawBtn').onclick = draw;
-    
-    // 初始設置：更新選單但不要執行 draw()
-    window.onload = () => {
-      updateSpreadVariants();
-    };
+    window.onload = () => { updateSpreadVariants(); };
   </script>
 </body>
 </html>
