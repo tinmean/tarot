@@ -263,8 +263,8 @@
   <div class="history-section">
     <label>歷史占卜紀錄</label>
     <div class="history-controls">
-      <button onclick="copyLatestHistory()" class="btn-small">複製最新</button>
-      <button onclick="copyAllHistory()" class="btn-small">複製全部</button>
+      <button onclick="copyLatestHistory(this)" class="btn-small">複製最新</button>
+      <button onclick="copyAllHistory(this)" class="btn-small">複製全部</button>
       <button onclick="clearHistory()" class="btn-small btn-danger">清除紀錄</button>
     </div>
     <textarea id="history" rows="6" readonly></textarea>
@@ -315,7 +315,7 @@
       },
       "12": {
         "houses": { type: 'circle', labels: ['1.命宮/自我', '2.財帛/財運', '3.兄弟/溝通', '4.田宅/家庭', '5.子女/戀愛', '6.奴僕/健康', '7.夫妻/伴侶', '8.疾厄/轉化', '9.遷移/高等', '10.官祿/事業', '11.福德/社交', '12.相貌/潛意識'] },
-        "months": { type: 'circle', labels: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '開九月', '十月', '十一月', '十二月'] }
+        "months": { type: 'circle', labels: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'] }
       }
     };
 
@@ -352,39 +352,59 @@
       return deck;
     }
 
-    function copyToClipboard(text) {
+    /**
+     * 修改後的複製函式，解決崩潰問題
+     * @param {string} text 要複製的內容
+     * @param {HTMLElement} btn 觸發按鈕，用來顯示回饋
+     */
+    function copyToClipboard(text, btn) {
       const el = document.createElement('textarea');
       el.value = text;
+      el.setAttribute('readonly', '');
+      el.style.position = 'absolute';
+      el.style.left = '-9999px';
       document.body.appendChild(el);
       el.select();
-      document.execCommand('copy');
+      
+      try {
+        const successful = document.execCommand('copy');
+        if (successful && btn) {
+          const originalText = btn.innerText;
+          btn.innerText = "已複製！";
+          setTimeout(() => { btn.innerText = originalText; }, 1500);
+        }
+      } catch (err) {
+        console.error('複製失敗', err);
+      }
+      
       document.body.removeChild(el);
-      const btn = document.activeElement;
-      const originalText = btn.innerText;
-      btn.innerText = "已複製！";
-      setTimeout(() => { btn.innerText = originalText; }, 1500);
     }
 
-    function copyAllHistory() {
+    function copyAllHistory(btn) {
       const historyText = document.getElementById('history').value;
       if (!historyText) return;
-      copyToClipboard(historyText);
+      copyToClipboard(historyText.trim(), btn);
     }
 
-    function copyLatestHistory() {
+    function copyLatestHistory(btn) {
       const historyText = document.getElementById('history').value;
       if (!historyText) return;
-      const entries = historyText.split(/\n\n+/);
-      if (entries.length > 0 && entries[0].trim() !== "") {
-        copyToClipboard(entries[0].trim());
+      
+      // 根據兩個以上的換行符切割，取得最近一筆
+      const entries = historyText.split(/\n\s*\n+/);
+      const latest = entries.find(e => e.trim().length > 0);
+      
+      if (latest) {
+        copyToClipboard(latest.trim(), btn);
       }
     }
 
     function clearHistory() {
-      if (document.getElementById('history').value === "") return;
+      const historyArea = document.getElementById('history');
+      if (historyArea.value === "") return;
       const confirmClear = window.confirm("確定要清除所有占卜紀錄嗎？此動作無法復原。");
       if (confirmClear) {
-        document.getElementById('history').value = "";
+        historyArea.value = "";
       }
     }
 
@@ -431,7 +451,6 @@
         } else if (config.type === 'circle') {
           // 修正為逆時針方向排列 (Counter-Clockwise)
           // 起點 (i=0) 180度 (左方)
-          // 角度隨 i 遞減：180, 150, 120... (在網頁 Y 向下座標系中，這會呈現逆時針繞行)
           const angle = 180 - (i * 30);
           const r = 185; 
           const centerX = 210, centerY = 185;
