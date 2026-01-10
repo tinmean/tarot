@@ -3,15 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>塔羅牌抽牌程式（純文字版）</title>
+  <title>老K塔羅牌抽牌程式（純文字版）</title>
   <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f4f4f4;
-      padding: 20px;
+    :root {
+      --bg-color: #f4f4f4;
+      --card-bg: #fff;
+      --primary-color: #333;
+      --accent-color: #666;
     }
 
-    h1 { margin-bottom: 12px; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg-color);
+      padding: 20px;
+      margin: 0;
+      color: var(--primary-color);
+      /* 移除 overflow-x: hidden 以避免切到內容，讓使用者必要時可捲動 */
+    }
+
+    h1 { margin-bottom: 12px; font-size: 1.5rem; }
 
     .controls {
       margin: 14px 0 18px 0;
@@ -26,19 +36,33 @@
       padding: 8px 12px;
       border-radius: 10px;
       background: #fff;
+      margin: 0;
     }
 
     legend {
       padding: 0 6px;
-      color: #333;
+      color: var(--primary-color);
       font-size: 14px;
+      font-weight: bold;
     }
 
-    button { padding: 10px 16px; font-size: 16px; cursor: pointer; }
+    button {
+      padding: 10px 16px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #333;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    button:hover { background: #555; }
+    button:active { transform: translateY(1px); }
 
     input[type="text"] {
       padding: 8px 10px;
-      border-radius: 10px;
+      border-radius: 8px;
       border: 1px solid #ccc;
       background: #fff;
       font-size: 14px;
@@ -47,45 +71,53 @@
 
     select {
       padding: 8px 10px;
-      border-radius: 10px;
+      border-radius: 8px;
       border: 1px solid #ccc;
       background: #fff;
       font-size: 14px;
+      max-width: 100%;
     }
 
+    /* ===== 牌陣 Grid 系統 ===== */
     .cards {
       display: grid;
       gap: 16px;
+      margin-top: 20px;
+      width: 100%;
     }
 
     .spread-one { grid-template-columns: 1fr; justify-items: center; }
     .spread-three { grid-template-columns: repeat(3, 1fr); }
     .spread-five { grid-template-columns: repeat(5, 1fr); }
-    .spread-twelve { grid-template-columns: repeat(4, 1fr); }
-
-    /* 十二張圓環排列（視覺用，不影響文字） */
+    
+    /* 十二張圓環排列：基礎設定 */
     .spread-twelve.circle {
       position: relative;
       display: block;
-      width: 760px;
+      width: 760px; 
       height: 760px;
       margin: 0 auto;
+      /* 預設縮放中心為頂部中間，方便 RWD 調整 */
+      transform-origin: top center;
     }
 
     .spread-twelve.circle .card {
       position: absolute;
-      width: 150px;
+      width: 140px; /* 稍微縮小一點避免擁擠 */
+      height: auto;
       transform: translate(-50%, -50%);
+      margin: 0; /* 移除 grid gap 造成的影響 */
     }
 
     .spread-twelve.circle .card.center {
       left: 50% !important;
       top: 50% !important;
-      width: 170px;
+      width: 160px;
       z-index: 5;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
     }
 
-    /* 二擇一：左右比較型版面（只在五張牌＋二擇一時啟用） */
+    /* 二擇一：左右比較型版面 */
     .spread-five.choice {
       grid-template-columns: repeat(3, 1fr);
       grid-template-areas:
@@ -93,27 +125,25 @@
         "a2 . b2"
         ". c .";
     }
-
     .spread-five.choice .c1 { grid-area: a1; }
     .spread-five.choice .c2 { grid-area: a2; }
     .spread-five.choice .c3 { grid-area: b1; }
     .spread-five.choice .c4 { grid-area: b2; }
     .spread-five.choice .c5 { grid-area: c; }
 
+    /* 賽爾特十字 */
     .spread-celtic {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      grid-template-rows: auto auto auto auto;
+      grid-template-columns: repeat(6, 1fr);
       grid-template-areas:
         ". . c5 . . c10"
         ". c4 c2 c6 . c9"
         ". . c1 . . c8"
         ". . c3 . . c7";
-      align-items: start;
+      align-items: center;
+      justify-items: center;
     }
-
-    /* 賽爾特十字定位 */
     .spread-celtic .c1 { grid-area: c1; z-index: 1; }
-    .spread-celtic .c2 { grid-area: c2; z-index: 2; transform: rotate(90deg); }
+    .spread-celtic .c2 { grid-area: c2; z-index: 2; transform: rotate(90deg); margin-top: 0; }
     .spread-celtic .c3 { grid-area: c3; }
     .spread-celtic .c4 { grid-area: c4; }
     .spread-celtic .c5 { grid-area: c5; }
@@ -123,52 +153,50 @@
     .spread-celtic .c9 { grid-area: c9; }
     .spread-celtic .c10 { grid-area: c10; }
 
-    /* 讓交叉牌更像「壓在」中間牌上 */
-    .spread-celtic .c2 { margin-top: 18px; }
-
+    /* ===== 卡片樣式 ===== */
     .card {
-      background: #fff;
-      border-radius: 14px;
-      padding: 22px 12px;
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 16px 10px;
       text-align: center;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
       cursor: pointer;
       user-select: none;
-      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 120px;
     }
 
-    .card:active {
-      transform: translateY(1px);
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.15);
     }
+    
+    .card:active { transform: translateY(1px); }
 
     .card-name {
-      font-size: 26px;
-      font-weight: 600;
-      margin-bottom: 12px;
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      line-height: 1.3;
     }
 
-    .upright { color: #2b7a2b; }
-    .reversed { color: #a12626; }
+    .upright { color: #2b7a2b; border-bottom: 2px solid transparent; }
+    .reversed { color: #a12626; border-bottom: 2px solid #a12626; padding-bottom: 2px; }
 
-    .orientation {
-      font-size: 18px;
-      margin-bottom: 6px;
-    }
-
-    .type {
-      font-size: 16px;
-      color: #555;
-      margin-bottom: 10px;
-    }
+    .orientation { font-size: 14px; margin-bottom: 4px; color: #888; }
+    .type { font-size: 12px; color: #aaa; margin-bottom: 8px; }
 
     .position-label {
-      display: inline-block;
-      margin-top: 6px;
-      padding: 4px 10px;
-      font-size: 14px;
-      background: #f1f1f1;
-      border-radius: 999px;
-      color: #333;
+      margin-top: auto; /* 推到底部 */
+      padding: 2px 8px;
+      font-size: 12px;
+      background: #eee;
+      border-radius: 4px;
+      color: #555;
     }
 
     textarea {
@@ -181,85 +209,121 @@
     }
 
     .subtle {
-      font-size: 12px;
-      color: #666;
-      margin-top: -6px;
+      font-size: 13px;
+      color: var(--accent-color);
       margin-bottom: 12px;
     }
 
-    /* ===== 點牌放大（不跳頁） ===== */
+    /* ===== 點牌放大 Overlay ===== */
     .card-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.7);
       display: none;
       align-items: center;
       justify-content: center;
       z-index: 9999;
-      padding: 18px;
+      padding: 20px;
+      opacity: 0;
+      transition: opacity 0.2s;
     }
 
-    .card-overlay.active {
-      display: flex;
-    }
+    .card-overlay.active { display: flex; opacity: 1; }
 
     .overlay-card {
-      width: min(92vw, 360px);
-      max-height: 92vh;
-      overflow: auto;
+      width: 100%;
+      max-width: 320px;
       background: #fff;
-      border-radius: 18px;
-      padding: 26px 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      border-radius: 20px;
+      padding: 30px 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
       text-align: center;
+      position: relative;
     }
 
-    .overlay-card .card-name { font-size: 30px; margin-bottom: 12px; }
-    .overlay-card .orientation { font-size: 18px; margin-bottom: 8px; }
-    .overlay-card .type { font-size: 16px; margin-bottom: 10px; }
-    .overlay-card .position-label { font-size: 14px; }
+    .overlay-card .card-name { font-size: 32px; margin-bottom: 16px; }
+    .overlay-card .orientation { font-size: 20px; margin-bottom: 10px; }
+    .overlay-card .type { font-size: 16px; margin-bottom: 20px; }
+    .overlay-card .position-label { font-size: 16px; padding: 6px 12px; }
 
-    .overlay-hint {
-      margin-top: 12px;
-      font-size: 12px;
-      color: #666;
+    .close-btn {
+      margin-top: 20px;
+      background: #eee;
+      color: #333;
+      width: 100%;
     }
 
-    /* ===== 手機版排版優化（維持牌陣結構，縮小文字） ===== */
+    /* ===== 手機版排版修正 ===== */
     @media (max-width: 768px) {
-      body { padding: 10px; }
-      h1 { font-size: 18px; }
-      .subtle { font-size: 11px; }
-      .controls { gap: 6px; }
+      body { padding: 15px; }
+      h1 { font-size: 1.25rem; }
+      .controls { gap: 8px; }
+      
+      input[type="text"], select, button { font-size: 14px; width: 100%; }
+      input[type="text"] { width: calc(100% - 22px); } /* 扣除 padding border */
 
-      input[type="text"], select, button { font-size: 14px; }
-      fieldset { padding: 8px; }
+      .card { padding: 10px 6px; min-height: 100px; }
+      .card-name { font-size: 16px; }
+      .position-label { font-size: 11px; }
 
-      .card { padding: 14px 8px; }
-      .card-name { font-size: 18px; margin-bottom: 8px; }
-      .orientation { font-size: 13px; }
-      .type { font-size: 12px; margin-bottom: 6px; }
-      .position-label { font-size: 11px; padding: 3px 8px; }
-
-      /* 十二張圓盤在手機上整體縮放，而非改版型 */
-      .spread-twelve.circle {
-        transform: scale(0.85);
-        transform-origin: top center;
+      /* 一般牌陣轉單欄 */
+      .spread-three, .spread-five, .spread-five.choice {
+        grid-template-columns: 1fr;
+        grid-template-areas: initial; /* 取消二擇一的特殊版面，手機直接直排 */
+      }
+      /* 賽爾特十字在手機上也改為直排顯示，因為空間太小 */
+      .spread-celtic {
+        grid-template-columns: 1fr;
+        grid-template-areas: initial;
+      }
+      /* 讓賽爾特的特殊位置恢復正常流 */
+      .spread-celtic .c1, .spread-celtic .c2, .spread-celtic .c3, 
+      .spread-celtic .c4, .spread-celtic .c5, .spread-celtic .c6,
+      .spread-celtic .c7, .spread-celtic .c8, .spread-celtic .c9, .spread-celtic .c10 {
+        grid-area: auto;
+        transform: none; /* 取消旋轉 */
+        margin: 0;
+      }
+      /* 提示使用者手機版已簡化 */
+      .spread-celtic::before {
+        content: "（手機版切換為列表顯示）";
+        display: block;
+        color: #888;
+        font-size: 12px;
+        margin-bottom: 10px;
       }
 
-      textarea { font-size: 12px; }
+      /* 重點修正：十二張圓盤 */
+      .spread-twelve.circle {
+        /* 使用絕對置中技巧：
+           1. left: 50% 讓容器起始點移動到畫面正中間
+           2. margin-left: -380px (寬度的一半) 將容器拉回，使其正中心對準畫面中心
+           這樣無論縮放比例多少，圓盤都會在畫面正中央
+        */
+        width: 760px;
+        position: relative;
+        left: 50%;
+        margin-left: -380px;
+        
+        transform: scale(0.48); /* 稍微縮小以適應手機 */
+        transform-origin: top center;
+        margin-bottom: -350px; /* 修正縮放後下方留白 */
+        margin-top: 10px;
+      }
     }
   </style>
 </head>
 <body>
 
-<h1>🔮 塔羅牌抽牌程式（純文字版）</h1>
-<div class="subtle">牌陣只決定「抽幾張與位置」，抽牌內容設定（大牌/小牌/逆位）可獨立調整。預設全選。</div>
+<h1>🔮 老K塔羅牌抽牌（純文字修訂版）</h1>
+<div class="subtle"><a href="https://www.facebook.com/kfacehand" target="_blank" rel="noopener noreferrer">
+    追蹤老K手面相 Facebook
+</a></div>
 
 <div class="controls">
-  <label>
-    問題簡述（10字內）：
-    <input id="question" type="text" maxlength="10" placeholder="例如：工作方向" />
+  <label style="width:100%">
+    問題簡述（選填）：
+    <input id="question" type="text" maxlength="20" placeholder="例如：這週工作運勢..." />
   </label>
 
   <label>
@@ -274,565 +338,308 @@
   </label>
 
   <label id="threeVariantLabel">
-    三張牌類型：
+    類型：
     <select id="threeVariant">
       <option value="past_present_future" selected>過去／現在／未來</option>
       <option value="situation_obstacle_advice">現況／問題／建議</option>
     </select>
   </label>
 
-  <label id="fiveVariantLabel">
-    五張牌類型：
+  <label id="fiveVariantLabel" style="display:none">
+    類型：
     <select id="fiveVariant">
-      <option value="wu_shi_lun" selected>無視論（無提示）</option>
+      <option value="wu_shi_lun" selected>無視論（無位置定義）</option>
       <option value="choice">二擇一（A vs B）</option>
-      <option value="horseshoe">馬蹄鐵五張（過去→結果）</option>
-      <option value="challenge">現況／挑戰／潛在／建議／結果</option>
-      <option value="blindspots">盲點分析（表象／事實／忽略／誤判／關鍵）</option>
+      <option value="horseshoe">馬蹄鐵（過去→結果）</option>
+      <option value="blindspots">盲點分析</option>
     </select>
   </label>
 
-  <label id="twelveVariantLabel">
-    十二張牌類型：
+  <label id="twelveVariantLabel" style="display:none">
+    類型：
     <select id="twelveVariant">
       <option value="houses" selected>十二宮位</option>
       <option value="months">十二個月</option>
     </select>
   </label>
 
-  <label id="twelveThemeLabel">
-    <input type="checkbox" id="twelveTheme" checked /> 十二張圓盤加入主題牌（中心）
+  <label id="twelveThemeLabel" style="display:none; align-items:center;">
+    <input type="checkbox" id="twelveTheme" checked /> 加入中心主題牌
   </label>
 
   <fieldset>
-    <legend>抽牌內容設定</legend>
-    <label style="margin-right:10px;">
-      <input type="checkbox" id="useMajor" checked /> 使用大牌
-    </label>
-    <label style="margin-right:10px;">
-      <input type="checkbox" id="useMinor" checked /> 使用小牌
-    </label>
-    <label>
-      <input type="checkbox" id="allowReversed" checked /> 包含逆位
-    </label>
+    <legend>設定</legend>
+    <label><input type="checkbox" id="useMajor" checked /> 大牌</label>
+    <label><input type="checkbox" id="useMinor" checked /> 小牌</label>
+    <label><input type="checkbox" id="allowReversed" checked /> 逆位</label>
   </fieldset>
 
-  <button id="drawBtn" type="button">抽牌</button>
+  <button id="drawBtn" type="button">✨ 開始抽牌</button>
 </div>
 
 <div id="result" class="cards"></div>
 
-<!-- 點擊放大用遮罩（點背景關閉 / ESC 關閉） -->
-<div id="cardOverlay" class="card-overlay" aria-hidden="true"></div>
-
-<h2>📜 抽牌歷史紀錄（可複製）</h2>
-<div style="display:flex; gap:8px; margin-bottom:6px; flex-wrap: wrap;">
-  <button id="copyHistoryBtn" type="button">複製全部</button>
-  <button id="copyLastBtn" type="button">複製最新一筆</button>
-  <button id="clearHistoryBtn" type="button">清除紀錄</button>
+<!-- Overlay -->
+<div id="cardOverlay" class="card-overlay" aria-hidden="true">
+  <div class="overlay-card" id="overlayContent">
+    <!-- 內容動態生成 -->
+  </div>
 </div>
-<textarea id="history" rows="6" style="width:100%;font-size:14px;" placeholder="尚無紀錄" readonly></textarea>
+
+<hr style="border:0; border-top:1px solid #ddd; margin: 30px 0;">
+
+<h3>📜 歷史紀錄</h3>
+<div style="display:flex; gap:8px; margin-bottom:6px; flex-wrap: wrap;">
+  <button id="copyHistoryBtn" type="button" style="background:#666; font-size:14px; padding:6px 12px;">複製全部</button>
+  <button id="clearHistoryBtn" type="button" style="background:#999; font-size:14px; padding:6px 12px;">清除紀錄</button>
+</div>
+<textarea id="history" rows="6" style="width:100%; font-size:14px; line-height:1.5;" placeholder="抽牌結果會自動顯示在此處..." readonly></textarea>
 
 <script>
   "use strict";
 
-  // ===== 牌庫 =====
+  // ===== 1. 資料庫定義 =====
   const majorArcana = [
     "愚者","魔術師","女祭司","皇后","皇帝","教皇","戀人","戰車","力量","隱者",
     "命運之輪","正義","倒吊人","死神","節制","惡魔","高塔","星星","月亮","太陽","審判","世界"
   ];
 
-  // 小阿爾克那：四花色 1–10 + 宮廷牌（侍者/騎士/皇后/國王）= 56
   const minorArcana = (() => {
     const suits = ["權杖","聖杯","寶劍","錢幣"];
     const courts = ["侍者","騎士","皇后","國王"];
     const out = [];
-
     for (const suit of suits) {
-      for (let n = 1; n <= 10; n++) out.push({ name: suit + String(n), type: "小阿爾克那" });
+      for (let n = 1; n <= 10; n++) out.push({ name: suit + (n===1?"Ace":n), type: "小阿爾克那" });
       for (const court of courts) out.push({ name: suit + court, type: "宮廷牌" });
     }
-
     return out;
   })();
 
-  const THREE_CARD_VARIANTS = {
-    past_present_future: ["過去","現在","未來"],
-    situation_obstacle_advice: ["現況","問題","建議"]
-  };
-
-  const FIVE_CARD_VARIANTS = {
-    wu_shi_lun: [null, null, null, null, null],
-    choice: ["選項A","選項A走向","選項B","選項B走向","建議"],
-    horseshoe: ["過去","現在","障礙","建議","結果"],
-    challenge: ["現況","挑戰","潛在","建議","結果"],
-    blindspots: ["表象","事實","忽略","誤判","關鍵"]
-  };
-
-  const TWELVE_CARD_VARIANTS = {
-    houses: [
-      "第一宮：自我","第二宮：金錢","第三宮：溝通","第四宮：家庭",
-      "第五宮：創造","第六宮：工作","第七宮：關係","第八宮：轉化",
-      "第九宮：遠景","第十宮：事業","第十一宮：人際","第十二宮：潛意識"
-    ],
-    months: [
-      "一月","二月","三月","四月","五月","六月",
-      "七月","八月","九月","十月","十一月","十二月"
+  const SPREAD_CONFIG = {
+    three: {
+      past_present_future: ["過去","現在","未來"],
+      situation_obstacle_advice: ["現況","問題","建議"]
+    },
+    five: {
+      wu_shi_lun: [null, null, null, null, null],
+      choice: ["選項A","選項A走向","選項B","選項B走向","建議"],
+      horseshoe: ["過去","現在","障礙","建議","結果"],
+      blindspots: ["表象","事實","忽略","誤判","關鍵"]
+    },
+    twelve: {
+      houses: [
+        "1宮:自我","2宮:財運","3宮:溝通","4宮:家庭","5宮:戀愛/創造","6宮:工作/健康",
+        "7宮:伴侶/合作","8宮:偏財/生死","9宮:遠行/進修","10宮:事業/名望","11宮:人際/社群","12宮:潛意識"
+      ],
+      months: ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"]
+    },
+    celtic: [
+      "1.現況","2.阻礙","3.潛意識","4.過去","5.目標","6.未來",
+      "7.自我","8.環境","9.希望/恐懼","10.結果"
     ]
   };
 
-  const CELTIC_POSITIONS = [
-    "1 現況",
-    "2 阻礙",
-    "3 潛意識",
-    "4 過去",
-    "5 目標",
-    "6 未來",
-    "7 自我",
-    "8 他人",
-    "9 希望與恐懼",
-    "10 結果"
-  ];
-
-  // ===== 小工具 =====
-  const NEWLINE = "\n";
-
-  function shuffle(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      const tmp = arr[i];
-      arr[i] = arr[j];
-      arr[j] = tmp;
+  // ===== 2. 工具函式 =====
+  
+  // 優化：使用 Crypto API 進行更隨機的洗牌
+  function secureShuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const randomBuffer = new Uint32Array(1);
+      window.crypto.getRandomValues(randomBuffer);
+      const j = randomBuffer[0] % (i + 1);
+      [array[i], array[j]] = [array[j], array[i]];
     }
   }
 
-  function degToRad(deg) {
-    return deg * Math.PI / 180;
-  }
+  function degToRad(deg) { return deg * Math.PI / 180; }
 
   function getTimestamp() {
     const d = new Date();
     const pad = n => String(n).padStart(2, "0");
-    return (
-      d.getFullYear() + "-" +
-      pad(d.getMonth() + 1) + "-" +
-      pad(d.getDate()) + " " +
-      pad(d.getHours()) + ":" +
-      pad(d.getMinutes())
-    );
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
-  // 十二張圓盤角度：
-  // - 十二宮位：第一宮在左側（180°），逆時針排列
-  // - 十二個月：一月在上方（-90°），順時針排列
-  function getTwelveAngle(variant, index0to11) {
+  // 十二張角度計算
+  function getTwelveAngle(variant, index) {
     const step = 360 / 12;
-    if (variant === "houses") {
-      const base = 180;
-      const dir = -1;
-      return base + dir * step * index0to11;
-    }
-    // months
-    const base = -90;
-    const dir = 1;
-    return base + dir * step * index0to11;
+    // 12宮位：從左(180度)開始逆時針
+    if (variant === "houses") return 180 - (index * step);
+    // 12月份：從上(-90度)開始順時針
+    return -90 + (index * step);
   }
 
-  // ===== 點牌放大（不跳頁） =====
+  // ===== 3. DOM 與 Overlay 操作 =====
   const overlay = document.getElementById("cardOverlay");
+  const overlayContent = document.getElementById("overlayContent");
 
-  function openOverlayFromData(cardDiv) {
-    const cardName = cardDiv.dataset.cardName || "";
-    const reversed = cardDiv.dataset.reversed === "1";
-    const cardType = cardDiv.dataset.cardType || "";
-    const position = cardDiv.dataset.position || "";
-
-    overlay.innerHTML = "";
-
-    const box = document.createElement("div");
-    box.className = "overlay-card";
-
-    const nameEl = document.createElement("div");
-    nameEl.className = "card-name " + (reversed ? "reversed" : "upright");
-    nameEl.textContent = cardName;
-
-    const orientEl = document.createElement("div");
-    orientEl.className = "orientation";
-    orientEl.textContent = reversed ? "逆位" : "正位";
-
-    const typeEl = document.createElement("div");
-    typeEl.className = "type";
-    typeEl.textContent = cardType;
-
-    box.appendChild(nameEl);
-    box.appendChild(orientEl);
-    box.appendChild(typeEl);
-
-    if (position) {
-      const posEl = document.createElement("div");
-      posEl.className = "position-label";
-      posEl.textContent = position;
-      box.appendChild(posEl);
-    }
-
-    const hint = document.createElement("div");
-    hint.className = "overlay-hint";
-    hint.textContent = "點背景關閉（或按 ESC）";
-    box.appendChild(hint);
-
-    overlay.appendChild(box);
+  function openOverlay(data) {
+    overlayContent.innerHTML = `
+      <div class="card-name ${data.reversed ? 'reversed' : 'upright'}">
+        ${data.name} ${data.reversed ? '(逆)' : ''}
+      </div>
+      <div class="orientation">${data.reversed ? '逆位 (Reversed)' : '正位 (Upright)'}</div>
+      <div class="type">${data.type}</div>
+      ${data.position ? `<div class="position-label">${data.position}</div>` : ''}
+      <button class="close-btn" onclick="closeOverlay()">關閉</button>
+    `;
     overlay.classList.add("active");
     overlay.setAttribute("aria-hidden", "false");
   }
 
-  function closeOverlay() {
+  window.closeOverlay = function() {
     overlay.classList.remove("active");
     overlay.setAttribute("aria-hidden", "true");
-    overlay.innerHTML = "";
-  }
+  };
 
   overlay.addEventListener("click", (e) => {
-    // 點遮罩背景才關閉（點放大卡片本身不關閉）
     if (e.target === overlay) closeOverlay();
   });
 
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && overlay.classList.contains("active")) {
-      closeOverlay();
-    }
-  });
-
-  // ===== 產生卡片 DOM =====
-  function renderCard(opts) {
-    const cardName = opts.name;
-    const reversed = !!opts.reversed;
-    const cardType = opts.type;
-    const position = opts.position;
-
-    const div = document.createElement("div");
-    div.className = "card";
-
-    // 存資料給 overlay 使用（避免 clone 事件/避免宣告衝突）
-    div.dataset.cardName = cardName;
-    div.dataset.reversed = reversed ? "1" : "0";
-    div.dataset.cardType = cardType;
-    div.dataset.position = position || "";
-
-    div.addEventListener("click", () => openOverlayFromData(div));
-
-    const nameEl = document.createElement("div");
-    nameEl.className = "card-name " + (reversed ? "reversed" : "upright");
-    nameEl.textContent = cardName;
-
-    const orientation = document.createElement("div");
-    orientation.className = "orientation";
-    orientation.textContent = reversed ? "逆位" : "正位";
-
-    const typeEl = document.createElement("div");
-    typeEl.className = "type";
-    typeEl.textContent = cardType;
-
-    div.appendChild(nameEl);
-    div.appendChild(orientation);
-    div.appendChild(typeEl);
-
-    if (position) {
-      const pos = document.createElement("div");
-      pos.className = "position-label";
-      pos.textContent = position;
-      div.appendChild(pos);
-    }
-
-    return div;
-  }
-
-  // ===== DOM =====
-  const questionInput = document.getElementById("question");
-
-  const spreadSelect = document.getElementById("spread");
-  const threeVariantLabel = document.getElementById("threeVariantLabel");
-  const fiveVariantLabel = document.getElementById("fiveVariantLabel");
-  const twelveVariantLabel = document.getElementById("twelveVariantLabel");
-  const twelveThemeLabel = document.getElementById("twelveThemeLabel");
-
-  const threeVariant = document.getElementById("threeVariant");
-  const fiveVariant = document.getElementById("fiveVariant");
-  const twelveVariant = document.getElementById("twelveVariant");
-  const twelveTheme = document.getElementById("twelveTheme");
-
-  const useMajorCheckbox = document.getElementById("useMajor");
-  const useMinorCheckbox = document.getElementById("useMinor");
-  const allowReversedCheckbox = document.getElementById("allowReversed");
-
-  const result = document.getElementById("result");
-
-  const history = document.getElementById("history");
-  const copyHistoryBtn = document.getElementById("copyHistoryBtn");
-  const copyLastBtn = document.getElementById("copyLastBtn");
-  const clearHistoryBtn = document.getElementById("clearHistoryBtn");
-
-  // ===== 自我測試（保留 + 新增） =====
-  function assert(cond, msg) {
-    if (!cond) throw new Error(msg);
-  }
-
-  function runSelfTests() {
-    assert(majorArcana.length === 22, "大阿爾克那應為 22 張，實際 " + majorArcana.length);
-
-    Object.entries(THREE_CARD_VARIANTS).forEach(([k, v]) => {
-      assert(Array.isArray(v) && v.length === 3, "三張牌變體 " + k + " 必須是長度 3 的陣列");
-    });
-
-    Object.entries(FIVE_CARD_VARIANTS).forEach(([k, v]) => {
-      assert(Array.isArray(v) && v.length === 5, "五張牌變體 " + k + " 必須是長度 5 的陣列");
-    });
-
-    Object.entries(TWELVE_CARD_VARIANTS).forEach(([k, v]) => {
-      assert(Array.isArray(v) && v.length === 12, "十二張牌變體 " + k + " 必須是長度 12 的陣列");
-    });
-
-    assert(CELTIC_POSITIONS.length === 10, "賽爾特十字位置應為 10，實際 " + CELTIC_POSITIONS.length);
-
-    assert(minorArcana.length === 56, "小阿爾克那應為 56 張，實際 " + minorArcana.length);
-    const minorNames = minorArcana.map(x => x.name);
-    assert(new Set(minorNames).size === minorNames.length, "小阿爾克那牌名重複，請檢查建構。");
-
-    assert(NEWLINE === "\n" && NEWLINE.length === 1, "NEWLINE 必須是 \\n 字元");
-
-    for (let i = 0; i < 12; i++) {
-      const a = getTwelveAngle("houses", i);
-      const b = getTwelveAngle("months", i);
-      assert(Number.isFinite(a) && Number.isFinite(b), "十二張角度計算結果必須為有限數字");
-    }
-
-    const ts = getTimestamp();
-    assert(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(ts), "時間戳格式不正確：" + ts);
-
-    // overlay 基本檢查
-    assert(overlay && typeof closeOverlay === "function", "overlay 初始化失敗");
-  }
-
-  // ===== Cookie 工具（歷史紀錄保存） =====
-  const HISTORY_COOKIE_KEY = "tarot_history_v1";
-  const HISTORY_DAYS = 30;
-
-  function setCookie(cookieName, value, days) {
-    const expires = new Date(Date.now() + days * 864e5).toUTCString();
-    document.cookie = cookieName + "=" + encodeURIComponent(value) + "; expires=" + expires + "; path=/";
-  }
-
-  function getCookie(cookieName) {
-    const token = document.cookie
-      .split("; ")
-      .find(row => row.startsWith(cookieName + "="));
-
-    return token ? token.split("=")[1] : undefined;
-  }
-
-  function loadHistoryFromCookie() {
-    const raw = getCookie(HISTORY_COOKIE_KEY);
-    if (!raw) return;
-
-    try {
-      const text = decodeURIComponent(raw);
-      history.value = text;
-
-      const lines = text.split(NEWLINE).filter(Boolean);
-      if (lines.length) history.dataset.last = lines[lines.length - 1];
-    } catch (e) {
-      console.warn("讀取歷史 Cookie 失敗", e);
-    }
-  }
-
-  function saveHistoryToCookie() {
-    setCookie(HISTORY_COOKIE_KEY, history.value || "", HISTORY_DAYS);
-  }
-
-  // ===== UI 行為 =====
-  function updateVariantVisibility() {
-    const spread = spreadSelect.value;
-    threeVariantLabel.style.display = spread === "three" ? "inline-flex" : "none";
-    fiveVariantLabel.style.display = spread === "five" ? "inline-flex" : "none";
-    twelveVariantLabel.style.display = spread === "twelve" ? "inline-flex" : "none";
-    twelveThemeLabel.style.display = spread === "twelve" ? "inline-flex" : "none";
-  }
-
-  function appendHistoryLine(line) {
-    history.value = history.value ? history.value + NEWLINE + line : line;
-    history.dataset.last = line;
-    saveHistoryToCookie();
-  }
-
-  async function copyText(text) {
-    if (!text) return;
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      history.focus();
-      history.select();
-      document.execCommand("copy");
-    }
-  }
-
+  // ===== 4. 核心邏輯 =====
   function buildDeck(useMajor, useMinor) {
     let deck = [];
-    if (useMajor) deck = deck.concat(majorArcana.map(cardTitle => ({ name: cardTitle, type: "大阿爾克那" })));
+    if (useMajor) deck = deck.concat(majorArcana.map(n => ({ name: n, type: "大阿爾克那" })));
     if (useMinor) deck = deck.concat(minorArcana);
     return deck;
   }
 
-  function getSpreadLabel() {
-    const spread = spreadSelect.value;
-    if (spread === "one") return "單張牌";
-    if (spread === "three") return "三張牌／" + threeVariant.options[threeVariant.selectedIndex].text;
-    if (spread === "five") return "五張牌／" + fiveVariant.options[fiveVariant.selectedIndex].text;
-    if (spread === "twelve") return "十二張牌／" + twelveVariant.options[twelveVariant.selectedIndex].text;
-    if (spread === "celtic") return "賽爾特十字";
-    return "未知牌陣";
+  function renderCard(card, position, styleCallback) {
+    const el = document.createElement("div");
+    el.className = "card";
+    
+    // 點擊事件
+    el.onclick = () => openOverlay({ ...card, position });
+
+    el.innerHTML = `
+      <div class="card-name ${card.reversed ? 'reversed' : 'upright'}">${card.name}</div>
+      <div class="orientation">${card.reversed ? '逆位' : '正位'}</div>
+      <div class="type">${card.type}</div>
+      ${position ? `<div class="position-label">${position}</div>` : ''}
+    `;
+
+    if (styleCallback) styleCallback(el);
+    return el;
   }
 
   function drawCards() {
-    const spread = spreadSelect.value;
-    const allowReversed = allowReversedCheckbox.checked;
-    const useMajor = useMajorCheckbox.checked;
-    const useMinor = useMinorCheckbox.checked;
+    const spread = document.getElementById("spread").value;
+    const useMajor = document.getElementById("useMajor").checked;
+    const useMinor = document.getElementById("useMinor").checked;
+    const allowReversed = document.getElementById("allowReversed").checked;
+    const question = document.getElementById("question").value.trim();
 
-    if (!useMajor && !useMinor) {
-      alert("請至少選擇『使用大牌』或『使用小牌』其中一種。\n（預設全選，你可能不小心都取消了）");
-      return;
-    }
+    if (!useMajor && !useMinor) return alert("請至少選擇一種牌組（大牌或小牌）！");
 
-    const questionText = (questionInput.value || "").trim();
-
-    // 十二張：外圈 12 張；可選擇加一張中心主題牌（共 13 張）
-    const includeTwelveTheme = spread === "twelve" && twelveTheme.checked;
-    const count =
-      spread === "one" ? 1 :
-      spread === "five" ? 5 :
-      spread === "twelve" ? (includeTwelveTheme ? 13 : 12) :
-      spread === "celtic" ? 10 :
-      3;
-
+    // 準備牌庫
     const deck = buildDeck(useMajor, useMinor);
-    if (deck.length < count) {
-      alert("牌庫張數不足（目前 " + deck.length + " 張），無法抽出 " + count + " 張。請勾選更多牌或改用較短牌陣。");
-      return;
+    secureShuffle(deck);
+
+    // 計算需求張數
+    let positions = [];
+    let isTwelve = false;
+    let isCeltic = false;
+
+    if (spread === "one") positions = [null];
+    else if (spread === "three") positions = SPREAD_CONFIG.three[document.getElementById("threeVariant").value];
+    else if (spread === "five") positions = SPREAD_CONFIG.five[document.getElementById("fiveVariant").value];
+    else if (spread === "twelve") {
+      positions = SPREAD_CONFIG.twelve[document.getElementById("twelveVariant").value];
+      isTwelve = true;
+    } else if (spread === "celtic") {
+      positions = SPREAD_CONFIG.celtic;
+      isCeltic = true;
     }
 
-    shuffle(deck);
+    // 檢查中心主題牌 (僅限十二張)
+    const hasTheme = isTwelve && document.getElementById("twelveTheme").checked;
+    const totalNeeded = positions.length + (hasTheme ? 1 : 0);
 
-    // 清空 + 設定版面 class
-    result.innerHTML = "";
-    const isChoiceFive = spread === "five" && fiveVariant.value === "choice";
+    if (deck.length < totalNeeded) return alert(`牌數不足！你需要 ${totalNeeded} 張，但牌庫只有 ${deck.length} 張。`);
 
-    if (spread === "twelve") {
-      result.className = "cards spread-twelve circle";
-    } else {
-      result.className = "cards spread-" + spread + (isChoiceFive ? " choice" : "");
+    // 開始繪製
+    const container = document.getElementById("result");
+    container.innerHTML = "";
+    container.className = "cards spread-" + spread;
+    if (spread === "five" && document.getElementById("fiveVariant").value === "choice") container.classList.add("choice");
+    if (isTwelve) container.classList.add("circle");
+
+    let cardIdx = 0;
+    let resultText = [];
+
+    // 處理中心主題牌
+    if (hasTheme) {
+      const c = deck[cardIdx++];
+      c.reversed = allowReversed && (window.crypto.getRandomValues(new Uint8Array(1))[0] < 128);
+      resultText.push(`[主題:${c.name}${c.reversed?'(逆)':''}]`);
+      
+      const el = renderCard(c, "核心主題");
+      el.classList.add("center");
+      container.appendChild(el);
     }
 
-    const historyNames = [];
-    let deckIndex = 0;
+    // 處理主要位置
+    positions.forEach((posName, i) => {
+      const c = deck[cardIdx++];
+      c.reversed = allowReversed && (window.crypto.getRandomValues(new Uint8Array(1))[0] < 128);
+      
+      resultText.push(`${posName || (i+1)}:${c.name}${c.reversed?'(逆)':''}`);
 
-    // 十二張中心主題牌（可選）
-    if (spread === "twelve" && includeTwelveTheme) {
-      const reversed = allowReversed && Math.random() < 0.5;
-      const cardText = reversed ? (deck[deckIndex].name + "(逆)") : deck[deckIndex].name;
-      historyNames.push("主題:" + cardText);
-
-      const themeEl = renderCard({
-        name: deck[deckIndex].name,
-        reversed,
-        type: deck[deckIndex].type,
-        position: "主題"
+      const el = renderCard(c, posName, (div) => {
+        if (spread === "five" && document.getElementById("fiveVariant").value === "choice") div.classList.add("c"+(i+1));
+        if (spread === "celtic") div.classList.add("c"+(i+1));
+        
+        // 十二張圓形計算
+        if (isTwelve) {
+          const angle = getTwelveAngle(document.getElementById("twelveVariant").value, i);
+          const r = 300; // 半徑
+          const x = 380 + r * Math.cos(degToRad(angle)); // 380 是 760/2
+          const y = 380 + r * Math.sin(degToRad(angle));
+          div.style.left = x + "px";
+          div.style.top = y + "px";
+        }
       });
-      themeEl.classList.add("center");
-      result.appendChild(themeEl);
-      deckIndex += 1;
-    }
+      container.appendChild(el);
+    });
 
-    const loopCount =
-      spread === "twelve" ? 12 :
-      spread === "celtic" ? 10 :
-      spread === "five" ? 5 :
-      spread === "one" ? 1 :
-      3;
-
-    for (let i = 0; i < loopCount; i++) {
-      const reversed = allowReversed && Math.random() < 0.5;
-
-      let position = null;
-      if (spread === "three") position = THREE_CARD_VARIANTS[threeVariant.value][i];
-      if (spread === "five") position = FIVE_CARD_VARIANTS[fiveVariant.value][i];
-      if (spread === "twelve") position = TWELVE_CARD_VARIANTS[twelveVariant.value][i];
-      if (spread === "celtic") position = CELTIC_POSITIONS[i];
-
-      const cardText = reversed ? (deck[deckIndex].name + "(逆)") : deck[deckIndex].name;
-      historyNames.push(cardText);
-
-      const cardEl = renderCard({
-        name: deck[deckIndex].name,
-        reversed,
-        type: deck[deckIndex].type,
-        position
-      });
-
-      if (spread === "five" && fiveVariant.value === "choice") {
-        cardEl.classList.add("c" + String(i + 1));
-      }
-
-      if (spread === "celtic") {
-        cardEl.classList.add("c" + String(i + 1));
-      }
-
-      if (spread === "twelve") {
-        const angle = getTwelveAngle(twelveVariant.value, i);
-        const radius = 300;
-        const cx = 760 / 2;
-        const cy = 760 / 2;
-        const x = cx + radius * Math.cos(degToRad(angle));
-        const y = cy + radius * Math.sin(degToRad(angle));
-        cardEl.style.left = x + "px";
-        cardEl.style.top = y + "px";
-      }
-
-      result.appendChild(cardEl);
-      deckIndex += 1;
-    }
-
-    // 寫入歷史：時間戳 + 問題(可選) + 牌陣 + 抽牌結果
-    const ts = getTimestamp();
-    let line = "【" + ts + "】 ";
-    if (questionText) line += "【" + questionText + "】 ";
-    line += "【" + getSpreadLabel() + "】 " + historyNames.join(" ");
-    appendHistoryLine(line);
-
-    // 抽牌完成後自動清空問題簡述（避免下次誤用）
-    questionInput.value = "";
+    // 紀錄
+    const historyLine = `【${getTimestamp()}】${question ? `[問:${question}] ` : ''}${resultText.join(" / ")}`;
+    const historyArea = document.getElementById("history");
+    historyArea.value = historyLine + "\n" + historyArea.value;
+    
+    // 存入 Cookie
+    document.cookie = "tarot_history=" + encodeURIComponent(historyArea.value) + "; max-age=" + (86400*30);
   }
 
-  // ===== 綁定事件 =====
-  spreadSelect.addEventListener("change", updateVariantVisibility);
-  document.getElementById("drawBtn").addEventListener("click", drawCards);
+  // ===== 5. UI 事件綁定 =====
+  function updateUI() {
+    const val = document.getElementById("spread").value;
+    document.getElementById("threeVariantLabel").style.display = val === "three" ? "inline-flex" : "none";
+    document.getElementById("fiveVariantLabel").style.display = val === "five" ? "inline-flex" : "none";
+    document.getElementById("twelveVariantLabel").style.display = val === "twelve" ? "inline-flex" : "none";
+    document.getElementById("twelveThemeLabel").style.display = val === "twelve" ? "inline-flex" : "none";
+  }
 
-  copyHistoryBtn.addEventListener("click", () => copyText(history.value));
-  copyLastBtn.addEventListener("click", () => copyText(history.dataset.last || ""));
-  clearHistoryBtn.addEventListener("click", () => {
-    history.value = "";
-    delete history.dataset.last;
-    saveHistoryToCookie();
+  document.getElementById("spread").addEventListener("change", updateUI);
+  document.getElementById("drawBtn").addEventListener("click", drawCards);
+  
+  document.getElementById("copyHistoryBtn").addEventListener("click", () => {
+    const h = document.getElementById("history");
+    h.select();
+    document.execCommand("copy"); // 兼容性最好的複製方式
+  });
+  
+  document.getElementById("clearHistoryBtn").addEventListener("click", () => {
+    if(confirm("確定清空紀錄？")) {
+      document.getElementById("history").value = "";
+      document.cookie = "tarot_history=; max-age=0";
+    }
   });
 
-  // ===== 初始化 =====
-  try {
-    runSelfTests();
-  } catch (e) {
-    console.error(e);
-    alert("初始化失敗：" + e.message);
-  }
+  // 讀取歷史
+  const match = document.cookie.match(/tarot_history=([^;]+)/);
+  if (match) document.getElementById("history").value = decodeURIComponent(match[1]);
 
-  updateVariantVisibility();
-  loadHistoryFromCookie();
+  updateUI();
 </script>
 </body>
 </html>
