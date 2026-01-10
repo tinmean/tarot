@@ -2,612 +2,475 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>塔羅牌抽牌程式（自定義圖源版）</title>
   <style>
     :root {
-      --bg-color: #2c3e50;
-      --text-color: #ecf0f1;
-      --card-bg: #fff;
+      --bg-color: #1a1a2e;
+      --panel-bg: rgba(22, 27, 34, 0.9);
+      --text-color: #e6edf3;
+      --accent-color: #f1c40f;
+      --card-bg: #ffffff;
+      --shadow: 0 8px 24px rgba(0,0,0,0.5);
     }
 
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
       background: var(--bg-color);
-      padding: 20px;
-      padding-bottom: 60px; /* 預留 footer 空間 */
-      margin: 0;
       color: var(--text-color);
-    }
-
-    h1 { margin-bottom: 12px; font-size: 1.5rem; color: #f1c40f; text-shadow: 1px 1px 2px #000; }
-
-    .controls {
-      margin: 14px 0 18px 0;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      background: rgba(0,0,0,0.2);
-      padding: 10px;
-      border-radius: 12px;
-    }
-
-    fieldset {
-      border: 1px solid #7f8c8d;
-      padding: 8px 12px;
-      border-radius: 8px;
-      background: rgba(255,255,255,0.05);
       margin: 0;
-    }
-
-    legend { padding: 0 6px; color: #f1c40f; font-size: 14px; font-weight: bold; }
-
-    button {
-      padding: 10px 16px;
-      font-size: 16px;
-      cursor: pointer;
-      background: #f1c40f;
-      color: #2c3e50;
-      border: none;
-      border-radius: 8px;
-      font-weight: bold;
-      transition: all 0.2s;
-    }
-    button:hover { background: #f39c12; transform: scale(1.05); }
-    button:active { transform: scale(0.95); }
-
-    input[type="text"], select {
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: 1px solid #7f8c8d;
-      background: #ecf0f1;
-      color: #333;
-      font-size: 14px;
-    }
-
-    /* ===== 牌陣 Grid 系統 ===== */
-    .cards {
-      display: grid;
-      gap: 16px;
-      margin-top: 20px;
-      width: 100%;
-      min-height: 400px;
-    }
-
-    .spread-one { grid-template-columns: 1fr; justify-items: center; }
-    .spread-three { grid-template-columns: repeat(3, 1fr); }
-    .spread-five { grid-template-columns: repeat(5, 1fr); }
-    
-    /* 十二張圓環排列 */
-    .spread-twelve.circle {
-      position: relative;
-      display: block;
-      width: 760px; 
-      height: 760px;
-      margin: 0 auto;
-      transform-origin: top center;
-    }
-    .spread-twelve.circle .card {
-      position: absolute;
-      width: 100px;
-      height: 170px;
-      transform: translate(-50%, -50%);
-      margin: 0;
-    }
-    .spread-twelve.circle .card.center {
-      left: 50% !important;
-      top: 50% !important;
-      width: 120px;
-      height: 204px;
-      z-index: 5;
-      box-shadow: 0 0 25px rgba(241, 196, 15, 0.4);
-    }
-
-    .spread-five.choice {
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-areas: "a1 . b1" "a2 . b2" ". c .";
-    }
-    .spread-five.choice .c1 { grid-area: a1; }
-    .spread-five.choice .c2 { grid-area: a2; }
-    .spread-five.choice .c3 { grid-area: b1; }
-    .spread-five.choice .c4 { grid-area: b2; }
-    .spread-five.choice .c5 { grid-area: c; }
-
-    .spread-celtic {
-      grid-template-columns: repeat(6, 1fr);
-      grid-template-areas: ". . c5 . . c10" ". c4 c2 c6 . c9" ". . c1 . . c8" ". . c3 . . c7";
-      align-items: center;
-      justify-items: center;
-    }
-    .spread-celtic .c1 { grid-area: c1; z-index: 1; }
-    .spread-celtic .c2 { grid-area: c2; z-index: 2; transform: rotate(90deg); margin-top: 0; }
-    .spread-celtic .c3 { grid-area: c3; }
-    .spread-celtic .c4 { grid-area: c4; }
-    .spread-celtic .c5 { grid-area: c5; }
-    .spread-celtic .c6 { grid-area: c6; }
-    .spread-celtic .c7 { grid-area: c7; }
-    .spread-celtic .c8 { grid-area: c8; }
-    .spread-celtic .c9 { grid-area: c9; }
-    .spread-celtic .c10 { grid-area: c10; }
-
-    /* ===== 卡片樣式 ===== */
-    .card {
-      background: var(--card-bg);
-      border-radius: 10px;
-      aspect-ratio: 3/5; 
-      width: 100%;
-      max-width: 160px;
-      position: relative;
-      cursor: pointer;
-      transition: transform 0.3s, box-shadow 0.3s;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      padding: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      color: var(--accent-color);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      margin-bottom: 20px;
+    }
+
+    .controls {
+      background: var(--panel-bg);
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      max-width: 900px;
+      width: 100%;
+      align-items: flex-end;
+      margin-bottom: 30px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    label { font-size: 14px; font-weight: bold; color: var(--accent-color); }
+
+    input, select {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #30363d;
+      background: #0d1117;
+      color: white;
+      outline: none;
+    }
+
+    button {
+      padding: 10px 24px;
+      background: var(--accent-color);
+      color: #1a1a2e;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      height: 42px;
+    }
+
+    button:hover { transform: translateY(-2px); filter: brightness(1.1); }
+    button:active { transform: translateY(0); }
+
+    .result-container {
+      width: 100%;
+      max-width: 1200px;
+      position: relative;
+      margin-top: 20px;
+    }
+
+    .cards-grid {
+      display: grid;
+      gap: 20px;
       justify-content: center;
+      min-height: 300px;
+    }
+
+    .grid-one { grid-template-columns: repeat(1, 200px); }
+    .grid-three { grid-template-columns: repeat(3, 1fr); }
+    .grid-five { grid-template-columns: repeat(5, 1fr); }
+    
+    .grid-celtic {
+      display: grid;
+      grid-template-columns: repeat(6, 150px);
+      grid-template-rows: repeat(4, 220px);
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .card-wrapper {
+      position: relative;
+      perspective: 1000px;
+    }
+
+    .card {
+      width: 100%;
+      aspect-ratio: 5/8.5;
+      background: var(--card-bg);
+      border-radius: 12px;
       overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      cursor: pointer;
+      transition: transform 0.3s;
+      display: flex;
+      flex-direction: column;
+      position: relative;
     }
 
-    .card:hover {
-      transform: translateY(-5px) scale(1.02);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-      z-index: 10;
-    }
+    .card:hover { transform: translateY(-10px) scale(1.05); z-index: 10; }
 
-    .card-img {
+    .card img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 0.5s ease;
       display: block;
     }
 
-    /* 逆位處理 */
-    .card.reversed-card .card-img { transform: rotate(180deg); }
-
-    /* 純文字模式（圖片載入失敗時顯示） */
-    .card-text-fallback {
-      display: none;
-      padding: 10px;
-      text-align: center;
-      width: 100%;
+    .card.reversed img {
+      transform: rotate(180deg);
     }
-    .card-name { font-size: 18px; font-weight: 700; color: #333; margin-bottom: 5px; }
-    .orientation-text { font-size: 14px; color: #c0392b; font-weight: bold; }
-    
+
     .card-label {
       position: absolute;
       bottom: 0;
-      left: 0;
-      right: 0;
-      background: rgba(0,0,0,0.7);
-      color: #fff;
-      font-size: 12px;
-      padding: 4px;
+      width: 100%;
+      background: rgba(0,0,0,0.8);
+      color: white;
       text-align: center;
-      backdrop-filter: blur(2px);
+      padding: 5px 0;
+      font-size: 12px;
+      backdrop-filter: blur(4px);
     }
-    .reversed-label { color: #ff7675; }
 
-    .position-badge {
+    .card-pos {
       position: absolute;
-      top: 5px;
-      right: 5px;
-      background: #f1c40f;
-      color: #2c3e50;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent-color);
+      color: #1a1a2e;
+      padding: 2px 10px;
+      border-radius: 20px;
       font-size: 11px;
       font-weight: bold;
-      padding: 2px 6px;
-      border-radius: 4px;
-      z-index: 2;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      z-index: 5;
+      white-space: nowrap;
     }
 
-    /* ===== Overlay ===== */
-    .card-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-      display: none; align-items: center; justify-content: center; z-index: 9999; padding: 20px;
-      opacity: 0; transition: opacity 0.2s;
-    }
-    .card-overlay.active { display: flex; opacity: 1; }
-    
-    .overlay-card {
-      display: flex; flex-direction: column; align-items: center;
-      background: transparent; max-width: 90vw; max-height: 90vh;
-    }
-    
-    .overlay-img-container {
+    .spread-circle {
       position: relative;
-      max-height: 70vh;
-      border-radius: 15px;
-      overflow: hidden;
-      box-shadow: 0 0 30px rgba(255,255,255,0.1);
+      width: 800px;
+      height: 800px;
+      margin: 0 auto;
     }
-    .overlay-img { max-height: 70vh; max-width: 100%; display: block; }
-    .overlay-info { margin-top: 15px; text-align: center; color: #fff; }
-    .overlay-name { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
-    .overlay-detail { font-size: 16px; color: #bdc3c7; }
+    .spread-circle .card-wrapper {
+      position: absolute;
+      width: 120px;
+    }
 
-    /* ===== Footer Copyright ===== */
-    footer {
-      text-align: center;
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 1px solid #7f8c8d;
-      font-size: 12px;
-      color: #95a5a6;
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      cursor: zoom-out;
     }
-    footer a { color: #bdc3c7; text-decoration: none; }
-    footer a:hover { text-decoration: underline; color: #ecf0f1; }
+    .overlay.active { display: flex; }
+    .overlay img {
+      max-height: 85vh;
+      border-radius: 15px;
+      box-shadow: 0 0 50px rgba(255,255,255,0.1);
+    }
+    .overlay-info {
+      position: absolute;
+      bottom: 20px;
+      text-align: center;
+      color: white;
+    }
+
+    .history-section {
+      width: 100%;
+      max-width: 900px;
+      margin-top: 50px;
+      background: var(--panel-bg);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    textarea {
+      width: 100%;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      color: #8b949e;
+      border-radius: 8px;
+      padding: 10px;
+      font-family: monospace;
+      resize: vertical;
+    }
+
+    .fallback-text {
+      padding: 20px;
+      text-align: center;
+      color: #333;
+      font-size: 12px;
+      background: #eee;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    footer { margin: 40px 0; color: #484f58; font-size: 12px; }
 
     @media (max-width: 768px) {
-      body { padding: 10px; padding-bottom: 60px; }
-      .card { max-width: 100%; }
-      .spread-three, .spread-five, .spread-five.choice { grid-template-columns: repeat(3, 1fr); }
-      .spread-celtic { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-      .spread-celtic .card { width: 30%; margin: 0; transform: none !important; }
-      
-      .spread-twelve.circle {
-        width: 760px; position: relative; left: 50%; margin-left: -380px;
-        transform: scale(0.42); margin-top: -160px; margin-bottom: -380px;
-      }
+      .spread-circle { transform: scale(0.4); margin: -200px 0; }
+      .grid-three, .grid-five { grid-template-columns: repeat(3, 1fr); }
     }
   </style>
 </head>
 <body>
 
-<h1>🔮 塔羅牌抽牌（自定義圖源版）</h1>
-<div class="subtle" style="color: #bdc3c7;">圖片來源：您的 GitHub Pages</div>
+  <h1>🔮 塔羅自定義抽牌系統</h1>
 
-<div class="controls">
-  <label style="width:100%">
-    問題簡述：
-    <input id="question" type="text" maxlength="20" placeholder="例如：這週運勢..." />
-  </label>
-
-  <label>
-    牌陣：
-    <select id="spread">
-      <option value="one">單張牌</option>
-      <option value="three" selected>三張牌</option>
-      <option value="five">五張牌</option>
-      <option value="twelve">十二張牌</option>
-      <option value="celtic">賽爾特十字</option>
-    </select>
-  </label>
-
-  <label id="threeVariantLabel">
-    類型：
-    <select id="threeVariant">
-      <option value="past_present_future" selected>過去／現在／未來</option>
-      <option value="situation_obstacle_advice">現況／問題／建議</option>
-    </select>
-  </label>
-
-  <label id="fiveVariantLabel" style="display:none">
-    類型：
-    <select id="fiveVariant">
-      <option value="wu_shi_lun" selected>無視論</option>
-      <option value="choice">二擇一</option>
-      <option value="horseshoe">馬蹄鐵</option>
-      <option value="blindspots">盲點分析</option>
-    </select>
-  </label>
-
-  <label id="twelveVariantLabel" style="display:none">
-    類型：
-    <select id="twelveVariant">
-      <option value="houses" selected>十二宮位</option>
-      <option value="months">十二個月</option>
-    </select>
-  </label>
-  
-  <label id="twelveThemeLabel" style="display:none; color: #f1c40f;">
-    <input type="checkbox" id="twelveTheme" checked /> 中心主題牌
-  </label>
-
-  <fieldset>
-    <legend>設定</legend>
-    <label><input type="checkbox" id="useMajor" checked /> 大牌</label>
-    <label><input type="checkbox" id="useMinor" checked /> 小牌</label>
-    <label><input type="checkbox" id="allowReversed" checked /> 逆位</label>
-  </fieldset>
-
-  <button id="drawBtn" type="button">✨ 開始抽牌</button>
-</div>
-
-<div id="result" class="cards"></div>
-
-<!-- Overlay -->
-<div id="cardOverlay" class="card-overlay" aria-hidden="true" onclick="closeOverlay()">
-  <div class="overlay-card" onclick="event.stopPropagation()">
-    <div class="overlay-img-container">
-      <img id="overlayImg" class="overlay-img" src="" alt="card">
+  <div class="controls">
+    <div class="control-group" style="flex: 1; min-width: 200px;">
+      <label>您的提問</label>
+      <input type="text" id="question" placeholder="輸入問題（選填）..." />
     </div>
-    <div class="overlay-info">
-      <div id="overlayName" class="overlay-name"></div>
-      <div id="overlayDetail" class="overlay-detail"></div>
-      <button onclick="closeOverlay()" style="margin-top:15px; background:rgba(255,255,255,0.2); color:#fff;">關閉</button>
+
+    <div class="control-group">
+      <label>選擇牌陣</label>
+      <select id="spreadType">
+        <option value="one">單張占卜</option>
+        <option value="three" selected>三張牌陣 (過去/現在/未來)</option>
+        <option value="five">五張無視論 (或二擇一)</option>
+        <option value="twelve">十二宮位圓陣</option>
+        <option value="celtic">賽爾特十字</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label>設定</label>
+      <div style="display: flex; gap: 10px; align-items: center; height: 40px;">
+        <label style="color:white; font-weight: normal;"><input type="checkbox" id="allowReversed" checked> 逆位</label>
+        <label style="color:white; font-weight: normal;"><input type="checkbox" id="useMajorOnly"> 僅大牌</label>
+      </div>
+    </div>
+
+    <button id="drawBtn">✨ 抽牌啟動</button>
+  </div>
+
+  <div class="result-container" id="resultArea"></div>
+
+  <div class="history-section">
+    <label>歷史紀錄</label>
+    <textarea id="history" rows="5" readonly></textarea>
+    <div style="display: flex; gap: 10px;">
+      <button onclick="clearHistory()" style="background:#30363d; color:white; font-size:12px; padding:5px 10px; margin-top:5px;">清空紀錄</button>
+      <button onclick="copyHistory()" style="background:#30363d; color:white; font-size:12px; padding:5px 10px; margin-top:5px;">複製紀錄</button>
     </div>
   </div>
-</div>
 
-<hr style="border-top:1px solid #7f8c8d; margin: 30px 0;">
+  <div class="overlay" id="overlay" onclick="this.classList.remove('active')">
+    <img id="overlayImg" src="" alt="大圖">
+    <div class="overlay-info">
+      <h2 id="overlayName"></h2>
+      <p id="overlayDesc"></p>
+    </div>
+  </div>
 
-<h3 style="color:#ecf0f1;">📜 歷史紀錄</h3>
-<div style="margin-bottom:6px;">
-  <button id="copyHistoryBtn" type="button" style="background:#7f8c8d; font-size:14px; padding:6px 12px;">複製</button>
-  <button id="clearHistoryBtn" type="button" style="background:#95a5a6; font-size:14px; padding:6px 12px;">清除</button>
-</div>
-<textarea id="history" rows="6" style="width:100%; font-size:14px; line-height:1.5; background:#ecf0f1; color:#333;" readonly></textarea>
+  <footer>
+    塔羅牌影像由使用者自定義提供 | 基於 Web Crypto API 生成隨機數
+  </footer>
 
-<footer>
-  <p>Rider-Waite-Smith Tarot (1909) | Artwork by Pamela Colman Smith (Public Domain)</p>
-  <p>Image Source: <a href="https://github.com/searge/tarot" target="_blank">searge/tarot</a> (Licensed under MIT/Public Domain)</p>
-</footer>
+  <script>
+    // 設定圖片目錄為 HTML 所在的 images 資料夾
+    const IMAGE_BASE_URL = "./images/"; 
 
-<script>
-  "use strict";
-
-  // ===== 設定：圖片來源 =====
-  // 修正：使用使用者指定的 GitHub Pages 路徑
-  // 注意：GitHub Pages 預設網域為 github.io，而非 github.com
-  // 請確認您的倉庫名稱是 tarot，並且圖片放在 images 資料夾內
-  const IMAGE_BASE_URL = "https://tinmean.github.io/tarot/images/";
-
-  // ===== 1. 資料庫建構 (適配 Searge 命名規則) =====
-  
-  // 大牌：ar00.jpg ~ ar21.jpg
-  const majorArcana = [
-    "愚者","魔術師","女祭司","皇后","皇帝","教皇","戀人","戰車","力量","隱者",
-    "命運之輪","正義","倒吊人","死神","節制","惡魔","高塔","星星","月亮","太陽","審判","世界"
-  ].map((name, i) => ({
-    name: name,
-    type: "大阿爾克那",
-    file: "ar" + String(i).padStart(2, '0') + ".jpg"
-  }));
-
-  // 小牌：權杖=wa, 聖杯=cu, 寶劍=sw, 錢幣=pe
-  const suits = [
-    { name: "權杖", code: "wa" },
-    { name: "聖杯", code: "cu" },
-    { name: "寶劍", code: "sw" },
-    { name: "錢幣", code: "pe" }
-  ];
-  
-  const minorArcana = [];
-  suits.forEach(suit => {
-    // 數字牌 1~10 (01, 02... 10)
-    for (let i = 1; i <= 10; i++) {
-      const rank = i === 1 ? "Ace" : i;
-      minorArcana.push({
-        name: suit.name + rank,
-        type: "小阿爾克那",
-        file: suit.code + String(i).padStart(2, '0') + ".jpg"
-      });
-    }
-    // 宮廷牌：Page(pa), Knight(kn), Queen(qu), King(ki)
-    const courts = [
-      { name: "侍者", suffix: "pa" },
-      { name: "騎士", suffix: "kn" },
-      { name: "皇后", suffix: "qu" },
-      { name: "國王", suffix: "ki" }
+    const majorNames = ["愚者", "魔術師", "女祭司", "皇后", "皇帝", "教皇", "戀人", "戰車", "力量", "隱者", "命運之輪", "正義", "倒吊人", "死神", "節制", "惡魔", "高塔", "星星", "月亮", "太陽", "審判", "世界"];
+    const suitData = [
+      { name: "權杖", code: "wands" },
+      { name: "聖杯", code: "cups" },
+      { name: "寶劍", code: "swords" },
+      { name: "錢幣", code: "pents" }
     ];
-    courts.forEach(c => {
-      minorArcana.push({
-        name: suit.name + c.name,
-        type: "宮廷牌",
-        file: suit.code + c.suffix + ".jpg"
+
+    let fullDeck = [];
+
+    function initDeck() {
+      fullDeck = [];
+      // 大牌映射: maj00.jpg ~ maj21.jpg
+      majorNames.forEach((name, i) => {
+        fullDeck.push({
+          name,
+          type: "Major",
+          file: `maj${String(i).padStart(2, '0')}.jpg`
+        });
       });
-    });
-  });
+      // 小牌映射: 系列名 + 01~14.jpg (例如 cups01.jpg)
+      suitData.forEach(suit => {
+        for (let i = 1; i <= 14; i++) {
+          let rankName = "";
+          if (i === 1) rankName = "Ace";
+          else if (i <= 10) rankName = i;
+          else if (i === 11) rankName = "侍者";
+          else if (i === 12) rankName = "騎士";
+          else if (i === 13) rankName = "皇后";
+          else if (i === 14) rankName = "國王";
 
-  const SPREAD_CONFIG = {
-    three: {
-      past_present_future: ["過去","現在","未來"],
-      situation_obstacle_advice: ["現況","問題","建議"]
-    },
-    five: {
-      wu_shi_lun: [null, null, null, null, null],
-      choice: ["選項A","趨勢A","選項B","趨勢B","建議"],
-      horseshoe: ["過去","現在","障礙","建議","結果"],
-      blindspots: ["表象","事實","忽略","誤判","關鍵"]
-    },
-    twelve: {
-      houses: ["1宮:自我","2宮:財運","3宮:溝通","4宮:家庭","5宮:戀愛","6宮:工作","7宮:伴侶","8宮:生死","9宮:進修","10宮:事業","11宮:人際","12宮:潛意識"],
-      months: ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"]
-    },
-    celtic: ["1.現況","2.阻礙","3.潛意識","4.過去","5.目標","6.未來","7.自我","8.環境","9.希望/恐懼","10.結果"]
-  };
-
-  // ===== 工具函式 =====
-  function secureShuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-      const randomBuffer = new Uint32Array(1);
-      window.crypto.getRandomValues(randomBuffer);
-      const j = randomBuffer[0] % (i + 1);
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-  }
-
-  function degToRad(deg) { return deg * Math.PI / 180; }
-  function getTimestamp() {
-    const d = new Date();
-    const pad = n => String(n).padStart(2, "0");
-    return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  }
-
-  function getTwelveAngle(variant, index) {
-    const step = 360 / 12;
-    if (variant === "houses") return 180 - (index * step);
-    return -90 + (index * step);
-  }
-
-  // ===== Overlay =====
-  const overlay = document.getElementById("cardOverlay");
-  const overlayImg = document.getElementById("overlayImg");
-  const overlayName = document.getElementById("overlayName");
-  const overlayDetail = document.getElementById("overlayDetail");
-
-  function openOverlay(data) {
-    overlayImg.src = data.imgSrc;
-    overlayImg.style.transform = data.reversed ? "rotate(180deg)" : "none";
-    overlayName.innerText = `${data.name} ${data.reversed ? '(逆位)' : '(正位)'}`;
-    overlayDetail.innerText = `${data.type} / ${data.position || '無位置'}`;
-    overlay.classList.add("active");
-    overlay.setAttribute("aria-hidden", "false");
-  }
-
-  window.closeOverlay = function() {
-    overlay.classList.remove("active");
-    overlay.setAttribute("aria-hidden", "true");
-  };
-
-  // ===== 繪製與邏輯 =====
-  function buildDeck(useMajor, useMinor) {
-    let deck = [];
-    if (useMajor) deck = deck.concat(majorArcana);
-    if (useMinor) deck = deck.concat(minorArcana);
-    return deck;
-  }
-
-  function renderCard(card, position, styleCallback) {
-    const el = document.createElement("div");
-    el.className = `card ${card.reversed ? 'reversed-card' : ''}`;
-    
-    // 組合完整圖片網址
-    const fullImgUrl = IMAGE_BASE_URL + card.file;
-
-    el.onclick = () => openOverlay({ ...card, position, imgSrc: fullImgUrl });
-
-    // 失敗處理：如果圖片載入失敗 (onerror)，隱藏圖片，顯示 fallback 文字區塊
-    el.innerHTML = `
-      <div class="position-badge">${position || '#'}</div>
-      
-      <img src="${fullImgUrl}" 
-           class="card-img" 
-           alt="${card.name}"
-           loading="lazy"
-           onerror="console.log('Load failed:', this.src); this.style.display='none'; this.nextElementSibling.style.display='block';">
-           
-      <div class="card-text-fallback">
-        <div class="card-name">${card.name}</div>
-        <div class="orientation-text">${card.reversed ? '逆位' : '正位'}</div>
-        <div style="font-size:12px; color:#666; margin-top:4px;">(圖片載入失敗)</div>
-      </div>
-
-      <div class="card-label ${card.reversed ? 'reversed-label' : ''}">
-        ${card.name} ${card.reversed ? '(逆)' : ''}
-      </div>
-    `;
-
-    if (styleCallback) styleCallback(el);
-    return el;
-  }
-
-  function drawCards() {
-    const spread = document.getElementById("spread").value;
-    const useMajor = document.getElementById("useMajor").checked;
-    const useMinor = document.getElementById("useMinor").checked;
-    const allowReversed = document.getElementById("allowReversed").checked;
-    const question = document.getElementById("question").value.trim();
-
-    if (!useMajor && !useMinor) return alert("請至少選擇一種牌組！");
-
-    const deck = buildDeck(useMajor, useMinor);
-    secureShuffle(deck);
-
-    let positions = [];
-    let isTwelve = false;
-
-    if (spread === "one") positions = [null];
-    else if (spread === "three") positions = SPREAD_CONFIG.three[document.getElementById("threeVariant").value];
-    else if (spread === "five") positions = SPREAD_CONFIG.five[document.getElementById("fiveVariant").value];
-    else if (spread === "twelve") {
-      positions = SPREAD_CONFIG.twelve[document.getElementById("twelveVariant").value];
-      isTwelve = true;
-    } else if (spread === "celtic") {
-      positions = SPREAD_CONFIG.celtic;
-    }
-
-    const hasTheme = isTwelve && document.getElementById("twelveTheme").checked;
-    const totalNeeded = positions.length + (hasTheme ? 1 : 0);
-
-    if (deck.length < totalNeeded) return alert(`牌數不足！`);
-
-    const container = document.getElementById("result");
-    container.innerHTML = "";
-    container.className = "cards spread-" + spread;
-    if (spread === "five" && document.getElementById("fiveVariant").value === "choice") container.classList.add("choice");
-    if (isTwelve) container.classList.add("circle");
-
-    let cardIdx = 0;
-    let resultText = [];
-
-    if (hasTheme) {
-      const c = deck[cardIdx++];
-      c.reversed = allowReversed && (window.crypto.getRandomValues(new Uint8Array(1))[0] < 128);
-      resultText.push(`[主題:${c.name}${c.reversed?'(逆)':''}]`);
-      const el = renderCard(c, "核心主題");
-      el.classList.add("center");
-      container.appendChild(el);
-    }
-
-    positions.forEach((posName, i) => {
-      const c = deck[cardIdx++];
-      c.reversed = allowReversed && (window.crypto.getRandomValues(new Uint8Array(1))[0] < 128);
-      resultText.push(`${posName || (i+1)}:${c.name}${c.reversed?'(逆)':''}`);
-
-      const el = renderCard(c, posName, (div) => {
-        if (spread === "five" && document.getElementById("fiveVariant").value === "choice") div.classList.add("c"+(i+1));
-        if (spread === "celtic") div.classList.add("c"+(i+1));
-        
-        if (isTwelve) {
-          const angle = getTwelveAngle(document.getElementById("twelveVariant").value, i);
-          const r = 300;
-          const x = 380 + r * Math.cos(degToRad(angle));
-          const y = 380 + r * Math.sin(degToRad(angle));
-          div.style.left = x + "px";
-          div.style.top = y + "px";
+          fullDeck.push({
+            name: `${suit.name}${rankName}`,
+            type: "Minor",
+            file: `${suit.code}${String(i).padStart(2, '0')}.jpg`
+          });
         }
       });
-      container.appendChild(el);
-    });
-
-    const historyLine = `【${getTimestamp()}】${question ? `[${question}] ` : ''}${resultText.join(" / ")}`;
-    const historyArea = document.getElementById("history");
-    historyArea.value = historyLine + "\n" + historyArea.value;
-    
-    document.cookie = "tarot_history=" + encodeURIComponent(historyArea.value) + "; max-age=" + (86400*30);
-  }
-
-  // ===== UI 事件 =====
-  function updateUI() {
-    const val = document.getElementById("spread").value;
-    document.getElementById("threeVariantLabel").style.display = val === "three" ? "inline-flex" : "none";
-    document.getElementById("fiveVariantLabel").style.display = val === "five" ? "inline-flex" : "none";
-    document.getElementById("twelveVariantLabel").style.display = val === "twelve" ? "inline-flex" : "none";
-    document.getElementById("twelveThemeLabel").style.display = val === "twelve" ? "inline-flex" : "none";
-  }
-
-  document.getElementById("spread").addEventListener("change", updateUI);
-  document.getElementById("drawBtn").addEventListener("click", drawCards);
-  document.getElementById("copyHistoryBtn").addEventListener("click", () => {
-    document.getElementById("history").select();
-    document.execCommand("copy");
-  });
-  document.getElementById("clearHistoryBtn").addEventListener("click", () => {
-    if(confirm("確定清空？")) {
-      document.getElementById("history").value = "";
-      document.cookie = "tarot_history=; max-age=0";
     }
-  });
 
-  const match = document.cookie.match(/tarot_history=([^;]+)/);
-  if (match) document.getElementById("history").value = decodeURIComponent(match[1]);
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const random = window.crypto.getRandomValues(new Uint32Array(1))[0];
+        const j = random % (i + 1);
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
 
-  updateUI();
-</script>
+    function getSpreadConfig(type) {
+      switch(type) {
+        case 'one': return { grid: 'grid-one', labels: ['啟示'] };
+        case 'three': return { grid: 'grid-three', labels: ['過去', '現在', '未來'] };
+        case 'five': return { grid: 'grid-five', labels: ['現況', '障礙', '潛意識', '近未來', '最終建議'] };
+        case 'twelve': return { grid: 'circle', labels: ['1宮', '2宮', '3宮', '4宮', '5宮', '6宮', '7宮', '8宮', '9宮', '10宮', '11宮', '12宮'] };
+        case 'celtic': return { grid: 'celtic', labels: ['1.現況', '2.阻礙', '3.目標', '4.基礎', '5.過去', '6.未來', '7.自我', '8.環境', '9.希望', '10.結果'] };
+        default: return { grid: 'grid-one', labels: ['牌'] };
+      }
+    }
+
+    function createCardElement(cardData, label, isReversed) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'card-wrapper';
+
+      const posTag = document.createElement('div');
+      posTag.className = 'card-pos';
+      posTag.innerText = label;
+      wrapper.appendChild(posTag);
+
+      const card = document.createElement('div');
+      card.className = `card ${isReversed ? 'reversed' : ''}`;
+      
+      const imgPath = `${IMAGE_BASE_URL}${cardData.file}`;
+      const img = document.createElement('img');
+      img.src = imgPath;
+      img.alt = cardData.name;
+      
+      img.addEventListener('error', () => {
+        img.style.display = 'none';
+        const fallback = document.createElement('div');
+        fallback.className = 'fallback-text';
+        fallback.innerHTML = `圖檔缺失<br>${cardData.file}`;
+        card.prepend(fallback);
+        card.style.background = '#333';
+      });
+
+      const labelDiv = document.createElement('div');
+      labelDiv.className = 'card-label';
+      labelDiv.innerText = `${cardData.name} ${isReversed ? '(逆)' : ''}`;
+
+      card.appendChild(img);
+      card.appendChild(labelDiv);
+
+      card.addEventListener('click', () => {
+        const overlay = document.getElementById('overlay');
+        const overlayImg = document.getElementById('overlayImg');
+        overlayImg.src = imgPath;
+        overlayImg.style.transform = isReversed ? 'rotate(180deg)' : 'none';
+        document.getElementById('overlayName').innerText = `${cardData.name} ${isReversed ? '(逆位)' : '(正位)'}`;
+        document.getElementById('overlayDesc').innerText = `位置：${label}`;
+        overlay.classList.add('active');
+      });
+
+      wrapper.appendChild(card);
+      return wrapper;
+    }
+
+    function draw() {
+      initDeck();
+      const useMajorOnly = document.getElementById('useMajorOnly').checked;
+      let deck = useMajorOnly ? fullDeck.filter(c => c.type === "Major") : [...fullDeck];
+      
+      if (deck.length === 0) {
+        alert("牌組為空，請檢查設定。");
+        return;
+      }
+
+      shuffle(deck);
+
+      const spreadType = document.getElementById('spreadType').value;
+      const config = getSpreadConfig(spreadType);
+      const allowReversed = document.getElementById('allowReversed').checked;
+      
+      const area = document.getElementById('resultArea');
+      area.innerHTML = '';
+      
+      const gridDiv = document.createElement('div');
+      gridDiv.className = config.grid === 'circle' ? 'spread-circle' : `cards-grid ${config.grid}`;
+      area.appendChild(gridDiv);
+
+      let record = [];
+
+      config.labels.forEach((label, i) => {
+        if (i >= deck.length) return;
+        
+        const cardData = deck[i];
+        const isReversed = allowReversed && (window.crypto.getRandomValues(new Uint8Array(1))[0] > 127);
+        
+        record.push(`${label}: ${cardData.name}${isReversed ? '(逆)' : ''}`);
+
+        const cardWrapper = createCardElement(cardData, label, isReversed);
+        
+        if (config.grid === 'circle') {
+          const angle = (i * 30) - 90;
+          const radius = 300;
+          const x = 340 + radius * Math.cos(angle * Math.PI / 180);
+          const y = 340 + radius * Math.sin(angle * Math.PI / 180);
+          cardWrapper.style.left = `${x}px`;
+          cardWrapper.style.top = `${y}px`;
+        }
+
+        gridDiv.appendChild(cardWrapper);
+      });
+
+      const question = document.getElementById('question').value;
+      const time = new Date().toLocaleString();
+      const historyText = `【${time}】 問題：${question || '未設問'}\n結果：${record.join(', ')}\n------------------------\n`;
+      document.getElementById('history').value = historyText + document.getElementById('history').value;
+    }
+
+    function clearHistory() {
+      if(confirm('確定要清空所有紀錄嗎？')) {
+        document.getElementById('history').value = '';
+      }
+    }
+    
+    function copyHistory() {
+      const history = document.getElementById('history');
+      history.select();
+      document.execCommand('copy');
+      alert('已複製到剪貼簿');
+    }
+
+    document.getElementById('drawBtn').addEventListener('click', draw);
+    initDeck();
+  </script>
 </body>
 </html>
