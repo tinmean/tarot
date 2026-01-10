@@ -315,7 +315,7 @@
       },
       "12": {
         "houses": { type: 'circle', labels: ['1.命宮/自我', '2.財帛/財運', '3.兄弟/溝通', '4.田宅/家庭', '5.子女/戀愛', '6.奴僕/健康', '7.夫妻/伴侶', '8.疾厄/轉化', '9.遷移/高等', '10.官祿/事業', '11.福德/社交', '12.相貌/潛意識'] },
-        "months": { type: 'circle', labels: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'] }
+        "months": { type: 'circle', labels: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '開九月', '十月', '十一月', '十二月'] }
       }
     };
 
@@ -352,7 +352,6 @@
       return deck;
     }
 
-    // 輔助複製函式
     function copyToClipboard(text) {
       const el = document.createElement('textarea');
       el.value = text;
@@ -360,7 +359,6 @@
       el.select();
       document.execCommand('copy');
       document.body.removeChild(el);
-      // 提示（取代 alert）
       const btn = document.activeElement;
       const originalText = btn.innerText;
       btn.innerText = "已複製！";
@@ -376,7 +374,6 @@
     function copyLatestHistory() {
       const historyText = document.getElementById('history').value;
       if (!historyText) return;
-      // 依據雙換行符號切割（我們紀錄結尾是 \n\n）
       const entries = historyText.split(/\n\n+/);
       if (entries.length > 0 && entries[0].trim() !== "") {
         copyToClipboard(entries[0].trim());
@@ -432,7 +429,10 @@
           slot.style.top = c.y + 'px';
           if (c.z) slot.style.zIndex = c.z;
         } else if (config.type === 'circle') {
-          const angle = 180 + (i * 30);
+          // 修正為逆時針方向排列 (Counter-Clockwise)
+          // 起點 (i=0) 180度 (左方)
+          // 角度隨 i 遞減：180, 150, 120... (在網頁 Y 向下座標系中，這會呈現逆時針繞行)
+          const angle = 180 - (i * 30);
           const r = 185; 
           const centerX = 210, centerY = 185;
           slot.style.position = 'absolute';
