@@ -451,6 +451,7 @@
 
 <h3>📜 歷史紀錄</h3>
 <div style="display:flex; gap:8px; margin-bottom:6px; flex-wrap: wrap;">
+  <button id="copyLatestBtn" type="button" style="background:#444; color:#fff; font-size:14px; padding:6px 12px; border:none; border-radius:8px; cursor:pointer;">複製最新</button>
   <button id="copyHistoryBtn" type="button" style="background:#666; font-size:14px; padding:6px 12px;">複製全部</button>
   <button id="clearHistoryBtn" type="button" style="background:#999; font-size:14px; padding:6px 12px;">清除紀錄</button>
 </div>
@@ -683,6 +684,31 @@
   document.getElementById("spread").addEventListener("change", updateUI);
   document.getElementById("drawBtn").addEventListener("click", drawCards);
   
+  // 新增：複製最新一筆紀錄
+  document.getElementById("copyLatestBtn").addEventListener("click", () => {
+    const h = document.getElementById("history");
+    if (!h.value) return;
+    
+    // 取得第一行（最新一筆）
+    const latest = h.value.split('\n')[0];
+    
+    // 建立暫存 Textarea 來複製
+    const temp = document.createElement("textarea");
+    temp.value = latest;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand("copy");
+    document.body.removeChild(temp);
+    
+    // 按鈕回饋
+    const btn = document.getElementById("copyLatestBtn");
+    const originalText = btn.innerText;
+    btn.innerText = "已複製！";
+    setTimeout(() => {
+        btn.innerText = originalText;
+    }, 1000);
+  });
+
   document.getElementById("copyHistoryBtn").addEventListener("click", () => {
     const h = document.getElementById("history");
     h.select();
