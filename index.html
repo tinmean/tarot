@@ -36,8 +36,44 @@
       color: var(--accent-color);
       text-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
       font-size: 1.8rem;
-      margin: 20px 0;
+      margin: 20px 0 15px 0;
       text-align: center;
+    }
+
+    /* ===== 新增：導航連結區塊樣式 (深色主題適配) ===== */
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 25px;
+      padding: 12px 30px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 50px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(5px);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .nav-links a {
+      color: #ccc;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nav-links a:hover {
+      color: var(--accent-color);
+      text-shadow: 0 0 8px rgba(241, 196, 15, 0.8);
+      transform: translateY(-1px);
+    }
+
+    .nav-separator {
+      color: rgba(255, 255, 255, 0.2);
     }
 
     /* 控制面板 */
@@ -234,12 +270,32 @@
     @media (max-width: 600px) {
       h1 { font-size: 1.4rem; }
       .controls { padding: 15px; }
+      
+      /* 手機版導航調整 */
+      .nav-links {
+        padding: 10px 15px;
+        gap: 10px;
+        width: 100%;
+        border-radius: 15px;
+      }
+      .nav-links a { font-size: 13px; }
     }
   </style>
 </head>
 <body>
 
   <h1>🔮 老K塔羅抽牌</h1>
+
+  <!-- 修改：新增導航連結區塊 -->
+  <div class="nav-links">
+    <a href="https://kfacehand.com" target="_blank" rel="noopener noreferrer">🏠 老K手面相</a>
+    <span class="nav-separator">|</span>
+    <a href="https://learn.kfacehand.com" target="_blank" rel="noopener noreferrer">📚 K書中心</a>
+    <span class="nav-separator">|</span>
+    <a href="https://www.facebook.com/kfacehand" target="_blank" rel="noopener noreferrer">👍 FB粉絲團</a>
+    <span class="nav-separator">|</span>
+    <a href="https://tinmean.github.io/tarot/README.md" target="_blank" rel="noopener noreferrer">📖 程式說明</a>
+  </div>
 
   <div class="controls">
     <div class="control-group">
