@@ -10,6 +10,7 @@
       --card-bg: #fff;
       --primary-color: #333;
       --accent-color: #666;
+      --link-color: #2c3e50;
     }
 
     body {
@@ -18,10 +19,41 @@
       padding: 20px;
       margin: 0;
       color: var(--primary-color);
-      /* 移除 overflow-x: hidden 以避免切到內容，讓使用者必要時可捲動 */
     }
 
     h1 { margin-bottom: 12px; font-size: 1.5rem; }
+
+    /* ===== 新增：導航連結區塊樣式 ===== */
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      padding: 10px;
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .nav-links a {
+      color: var(--link-color);
+      text-decoration: none;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: #000;
+      text-decoration: underline;
+    }
+
+    .nav-separator {
+      color: #ccc;
+    }
 
     .controls {
       margin: 14px 0 18px 0;
@@ -97,16 +129,15 @@
       width: 760px; 
       height: 760px;
       margin: 0 auto;
-      /* 預設縮放中心為頂部中間，方便 RWD 調整 */
       transform-origin: top center;
     }
 
     .spread-twelve.circle .card {
       position: absolute;
-      width: 140px; /* 稍微縮小一點避免擁擠 */
+      width: 140px;
       height: auto;
       transform: translate(-50%, -50%);
-      margin: 0; /* 移除 grid gap 造成的影響 */
+      margin: 0;
     }
 
     .spread-twelve.circle .card.center {
@@ -191,7 +222,7 @@
     .type { font-size: 12px; color: #aaa; margin-bottom: 8px; }
 
     .position-label {
-      margin-top: auto; /* 推到底部 */
+      margin-top: auto;
       padding: 2px 8px;
       font-size: 12px;
       background: #eee;
@@ -206,12 +237,6 @@
       padding: 10px;
       resize: vertical;
       background: #fff;
-    }
-
-    .subtle {
-      font-size: 13px;
-      color: var(--accent-color);
-      margin-bottom: 12px;
     }
 
     /* ===== 點牌放大 Overlay ===== */
@@ -255,7 +280,6 @@
 
     /* ===== 手機版排版修正 ===== */
     @media (max-width: 768px) {
-      /* 調整容器 padding 以爭取空間 */
       body { padding: 10px; }
       h1 { font-size: 1.25rem; }
       .controls { gap: 8px; }
@@ -263,80 +287,49 @@
       input[type="text"], select, button { font-size: 14px; width: 100%; }
       input[type="text"] { width: calc(100% - 22px); }
 
-      /* 卡片縮小適應手機 Grid */
-      .card { 
-        padding: 8px 4px; 
-        min-height: 90px; 
-      }
+      .card { padding: 8px 4px; min-height: 90px; }
       .card-name { 
         font-size: 14px; 
         margin-bottom: 4px; 
-        white-space: nowrap; /* 避免換行導致版面過長 */
+        white-space: nowrap; 
         overflow: hidden; 
         text-overflow: ellipsis; 
       }
       .position-label { font-size: 10px; padding: 2px 4px; }
       .orientation { font-size: 11px; }
-      .type { display: none; } /* 手機版隱藏類別，保持版面簡潔，點開才看 */
+      .type { display: none; }
 
-      /* 1. 單張牌 */
       .spread-one { grid-template-columns: 1fr; }
 
-      /* 2. 三張牌：手機版改回橫向排列 (3欄) */
       .spread-three {
         grid-template-columns: repeat(3, 1fr);
         gap: 8px;
       }
 
-      /* 3. 五張牌 (通用/無視論/馬蹄鐵/盲點)：強制 5欄並排 */
-      /* 說明：為了讓手機版顯示五張並排，字體必須縮小且移除部分描述 */
       .spread-five:not(.choice) {
         grid-template-columns: repeat(5, 1fr);
-        gap: 3px; /* 極窄間距 */
+        gap: 3px;
       }
       
-      /* 針對五張並排的極限壓縮樣式 */
-      .spread-five:not(.choice) .card {
-         padding: 6px 2px;
-         min-height: 80px;
-      }
-      .spread-five:not(.choice) .card-name {
-         font-size: 11px; /* 縮小字體 */
-         margin-bottom: 2px;
-         white-space: normal; /* 允許換行 */
-         line-height: 1.1;
-      }
-      /* 隱藏 "正位/逆位" 文字，依靠顏色識別 */
-      .spread-five:not(.choice) .orientation {
-         display: none; 
-      }
-      /* 隱藏或極簡化位置標籤 */
-      .spread-five:not(.choice) .position-label {
-         font-size: 9px;
-         padding: 1px 2px;
-         white-space: nowrap;
-         overflow: hidden;
-         text-overflow: ellipsis;
-         max-width: 100%;
-      }
+      .spread-five:not(.choice) .card { padding: 6px 2px; min-height: 80px; }
+      .spread-five:not(.choice) .card-name { font-size: 11px; margin-bottom: 2px; white-space: normal; line-height: 1.1; }
+      .spread-five:not(.choice) .orientation { display: none; }
+      .spread-five:not(.choice) .position-label { font-size: 9px; padding: 1px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 
-      /* 4. 五張牌 (二擇一)：恢復特殊形狀 */
       .spread-five.choice {
-        grid-template-columns: 1fr 0.4fr 1fr; /* 左右寬，中間窄 */
+        grid-template-columns: 1fr 0.4fr 1fr;
         grid-template-areas:
           "a1 . b1"
           "a2 . b2"
           ". c .";
         gap: 8px;
       }
-      /* 確保 Grid Area 對應正確 */
       .spread-five.choice .c1 { grid-area: a1; margin: 0; }
       .spread-five.choice .c2 { grid-area: a2; margin: 0; }
       .spread-five.choice .c3 { grid-area: b1; margin: 0; }
       .spread-five.choice .c4 { grid-area: b2; margin: 0; }
       .spread-five.choice .c5 { grid-area: c; margin: 0; }
 
-      /* 5. 賽爾特十字：手機版維持直列 (過於複雜無法塞入小螢幕) */
       .spread-celtic {
         grid-template-columns: 1fr;
         grid-template-areas: initial;
@@ -356,13 +349,12 @@
         margin-bottom: 5px;
       }
 
-      /* 6. 十二張圓盤：縮放適應 */
       .spread-twelve.circle {
         width: 760px;
         position: relative;
         left: 50%;
         margin-left: -380px;
-        transform: scale(0.42); /* 再縮小一點確保不切邊 */
+        transform: scale(0.42);
         transform-origin: top center;
         margin-bottom: -400px;
         margin-top: 20px;
@@ -373,13 +365,17 @@
 <body>
 
 <h1>🔮 老K塔羅牌抽牌（純文字修訂版）</h1>
-<div class="subtle"><a href="https://www.facebook.com/kfacehand" target="_blank" rel="noopener noreferrer">
-    追蹤老K手面相 Facebook
-</a></div>
 
-<div class="subtle"><a href="https://tinmean.github.io/tarot/README.md" target="_blank" rel="noopener noreferrer">
-    抽牌程式說明
-</a></div>
+<!-- 修改：新增連結導航區塊 -->
+<div class="nav-links">
+  <a href="https://kfacehand.com" target="_blank" rel="noopener noreferrer">🏠 老K手面相</a>
+  <span class="nav-separator">|</span>
+  <a href="https://learn.kfacehand.com" target="_blank" rel="noopener noreferrer">📚 K書中心</a>
+  <span class="nav-separator">|</span>
+  <a href="https://www.facebook.com/kfacehand" target="_blank" rel="noopener noreferrer">👍 FB粉絲團</a>
+  <span class="nav-separator">|</span>
+  <a href="https://tinmean.github.io/tarot/README.md" target="_blank" rel="noopener noreferrer">📖 程式說明</a>
+</div>
 
 <div class="controls">
   <label style="width:100%">
@@ -502,7 +498,7 @@
   };
 
   // ===== 2. 工具函式 =====
-  
+   
   // 優化：使用 Crypto API 進行更隨機的洗牌
   function secureShuffle(array) {
     for (let i = array.length - 1; i > 0; i--) {
