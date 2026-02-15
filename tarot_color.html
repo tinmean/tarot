@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>專業塔羅抽牌系統 - 響應式大圖版</title>
+  <title>專業塔羅抽牌系統 - 響應式大圖版 (自動儲存)</title>
   <style>
     :root {
       --bg-color: #0f0c29;
@@ -208,7 +208,7 @@
     /* 複雜陣型寬高 (基準值加大) */
     .spread-area.layout-custom { width: 800px; height: 750px; }
     .spread-area.layout-circle { width: 750px; height: 750px; }
-    
+     
     .overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.96);
       display: none; justify-content: center; align-items: center; z-index: 2000;
@@ -283,7 +283,7 @@
   </div>
 
   <div class="history-section">
-    <label>歷史占卜紀錄</label>
+    <label>歷史占卜紀錄 (已自動儲存)</label>
     <div class="history-controls">
       <button onclick="copyLatestHistory(this)" class="btn-small">複製最新</button>
       <button onclick="copyAllHistory(this)" class="btn-small">複製全部</button>
@@ -302,6 +302,7 @@
 
   <script>
     const IMAGE_BASE_URL = "./images/";
+    const STORAGE_KEY = "tarot_history_log"; // 定義儲存的 Key
 
     const MAJOR_NAMES = ["愚者", "魔術師", "女祭司", "皇后", "皇帝", "教皇", "戀人", "戰車", "力量", "隱者", "命運之輪", "正義", "倒吊人", "死神", "節制", "惡魔", "高塔", "星星", "月亮", "太陽", "審判", "世界"];
     const SUITS = [
@@ -408,10 +409,18 @@
       if (latest) copyToClipboard(latest.trim(), btn);
     }
 
+    // --- 新增：儲存紀錄到 LocalStorage ---
+    function saveHistory() {
+        const historyData = document.getElementById('history').value;
+        localStorage.setItem(STORAGE_KEY, historyData);
+    }
+
+    // --- 修改：清除紀錄同時清除 LocalStorage ---
     function clearHistory() {
       if (document.getElementById('history').value === "") return;
       if (window.confirm("確定要清除所有占卜紀錄嗎？")) {
         document.getElementById('history').value = "";
+        localStorage.removeItem(STORAGE_KEY); // 清除本地儲存
       }
     }
 
@@ -421,7 +430,7 @@
       const allowRev = document.getElementById('allowRev').checked;
       const count = document.getElementById('cardCount').value;
       const variantKey = document.getElementById('spreadVariant').value;
-      
+       
       if (!variantKey) return;
       const config = SPREAD_CONFIG[count][variantKey];
       let deck = getDeck(incMajor, incMinor);
@@ -510,7 +519,12 @@
 
       const q = document.getElementById('question').value || "未設問";
       const log = `【${new Date().toLocaleString()}】 ${q}\n牌陣：${SPREAD_NAMES[variantKey]}\n結果：${results.join(' / ')}\n\n`;
-      document.getElementById('history').value = log + document.getElementById('history').value;
+      
+      const historyArea = document.getElementById('history');
+      historyArea.value = log + historyArea.value;
+      
+      // --- 新增：每次抽牌後自動儲存 ---
+      saveHistory();
     }
 
     function autoScale() {
@@ -549,7 +563,17 @@
     window.addEventListener('resize', autoScale);
     document.getElementById('cardCount').addEventListener('change', updateSpreadVariants);
     document.getElementById('drawBtn').onclick = draw;
-    window.onload = () => { updateSpreadVariants(); };
+    
+    // --- 新增：網頁載入時讀取紀錄 ---
+    window.onload = () => { 
+      updateSpreadVariants(); 
+      
+      // 讀取 LocalStorage
+      const savedHistory = localStorage.getItem(STORAGE_KEY);
+      if (savedHistory) {
+          document.getElementById('history').value = savedHistory;
+      }
+    };
   </script>
 </body>
 </html>
