@@ -1,1 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>老K塔羅牌抽牌程式（純文字版）</title>
+  <style>
+    :root {
+      --bg-color: #f4f4f4;
+      --card-bg: #fff;
+      --primary-color: #333;
+      --accent-color: #666;
+    }
 
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg-color);
+      padding: 20px;
+      margin: 0;
+      color: var(--primary-color);
+      /* 移除 overflow-x: hidden 以避免切到內容，讓使用者必要時可捲動 */
+    }
+
+    h1 { margin-bottom: 12px; font-size: 1.5rem; }
+
+    .controls {
+      margin: 14px 0 18px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    fieldset {
+      border: 1px solid #ccc;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: #fff;
+      margin: 0;
+    }
+
+    legend {
+      padding: 0 6px;
+      color: var(--primary-color);
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    button {
+      padding: 10px 16px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #333;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    button:hover { background: #555; }
+    button:active { transform: translateY(1px); }
+
+    input[type="text"] {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background: #fff;
+      font-size: 14px;
+      width: 160px;
+    }
+
+    select {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background: #fff;
+      font-size: 14px;
+      max-width: 100%;
+    }
+
+    /* ===== 牌陣 Grid 系統 ===== */
+    .cards {
+      display: grid;
+      gap: 16px;
+      margin-top: 20px;
+      width: 100%;
+    }
+
+    .spread-one { grid-template-columns: 1fr; justify-items: center; }
+    .spread-three { grid-template-columns: repeat(3, 1fr); }
+    .spread-five { grid-template-columns: repeat(5, 1fr); }
+    
+    /* 十二張圓環排列：基礎設定 */
+    .spread-twelve.circle {
+      position: relative;
+      display: block;
+      width: 760px; 
+      height: 760px;
+      margin: 0 auto;
+      /* 預設縮放中心為頂部中間，方便 RWD 調整 */
+      transform-origin: top center;
+    }
+
+    .spread-twelve.circle .card {
+      position: absolute;
+      width: 140px; /* 稍微縮小一點避免擁擠 */
+      height: auto;
+      transform: translate(-50%, -50%);
+      margin: 0; /* 移除 grid gap 造成的影響 */
+    }
+
+    .spread-twelve.circle .card.center {
+      left: 50% !important;
+      top: 50% !important;
+      width: 160px;
+      z-index: 5;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    }
+
+    /* 二擇一：左右比較型版面 */
+    .spread-five.choice {
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-areas:
+        "a1 . b1"
+        "a2 . b2"
+        ". c .";
+    }
+    .spread-five.choice .c1 { grid-area: a1; }
+    .spread-five.choice .c2 { grid-area: a2; }
+    .spread-five.choice .c3 { grid-area: b1; }
+    .spread-five.choice .c4 { grid-area: b2; }
+    .spread-five.choice .c5 { grid-area: c; }
+
+    /* 賽爾特十字 */
+    .spread-celtic {
+      grid-template-columns: repeat(6, 1fr);
+      grid-template-areas:
+        ". . c5 . . c10"
+        ". c4 c2 c6 . c9"
+        ". . c1 . . c8"
+        ". . c3 . . c7";
+      align-items: center;
+      justify-items: center;
+    }
+    .spread-celtic .c1 { grid-area: c1; z-index: 1; }
+    .spread-celtic .c2 { grid-area: c2; z-index: 2; transform: rotate(90deg); margin-top: 0; }
+    .spread-celtic .c3 { grid-area: c3; }
+    .spread-celtic .c4 { grid-area: c4; }
+    .spread-celtic .c5 { grid-area: c5; }
+    .spread-celtic .c6 { grid-area: c6; }
+    .spread-celtic .c7 { grid-area: c7; }
+    .spread-celtic .c8 { grid-area: c8; }
+    .spread-celtic .c9 { grid-area: c9; }
+    .spread-celtic .c10 { grid-area: c10; }
+
+    /* ===== 卡片樣式 ===== */
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 16px 10px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 120px;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+    }
+    
+    .card:active { transform: translateY(1px); }
+
+    .card-name {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    .upright { color: #2b7a2b; border-bottom: 2px solid transparent; }
+    .reversed { color: #a12626; border-bottom: 2px solid #a12626; padding-bottom: 2px; }
+
+    .orientation { font-size: 14px; margin-bottom: 4px; color: #888; }
+    .type { font-size: 12px; color: #aaa; margin-bottom: 8px; }
+
+    .position-label {
+      margin-top: auto; /* 推到底部 */
+      padding: 2px 8px;
+      font-size: 12px;
+      background: #eee;
+      border-radius: 4px;
+      color: #555;
+    }
+
+    textarea {
+      box-sizing: border-box;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      resize: vertical;
+      background: #fff;
+    }
+
+    .subtle {
+      font-size: 13px;
+      color: var(--accent-color);
+      margin-bottom: 12px;
+    }
+
+    /* ===== 點牌放大 Overlay ===== */
+    .card-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .card-overlay.active { display: flex; opacity: 1; }
+
+    .overlay-card {
+      width: 100%;
+      max-width: 320px;
+      background: #fff;
+      border-radius: 20px;
+      padding: 30px 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      text-align: center;
+      position: relative;
+    }
+
+    .overlay-card .card-name { font-size: 32px; margin-bottom: 16px; }
+    .overlay-card .orientation { font-size: 20px; margin-bottom: 10px; }
+    .overlay-card .type { font-size: 16px; margin-bottom: 20px; }
+    .overlay-card .position-label { font-size: 16px; padding: 6px 12px; }
+
+    .close-btn {
+      margin-top: 20px;
+      background: #eee;
+      color: #333;
+      width: 100%;
+    }
+
+    /* ===== 手機版排版修正 ===== */
+    @media (max-width: 768px) {
+      /* 調整容器 padding 以爭取空間 */
+      body { padding: 10px; }
+      h1 { font-size: 1.25rem; }
+      .controls { gap: 8px; }
+      
+      input[type="text"], select, button { font-size: 14px; width: 100%; }
+      input[type="text"] { width: calc(100% - 22px); }
+
+      /* 卡片縮小適應手機 Grid */
+      .card { 
+        padding: 8px 4px; 
+        min-height: 90px; 
+      }
+      .card-name { 
+        font-size: 14px; 
+        margin-bottom: 4px; 
+        white-space: nowrap; /* 避免換行導致版面過長 */
+        overflow: hidden; 
+        text-overflow: ellipsis; 
+      }
+      .position-label { font-size: 10px; padding: 2px 4px; }
+      .orientation { font-size: 11px; }
+      .type { display: none; } /* 手機版隱藏類別，保持版面簡潔，點開才看 */
+
+      /* 1. 單張牌 */
+      .spread-one { grid-template-columns: 1fr; }
+
+      /* 2. 三張牌：手機版改回橫向排列 (3欄) */
+      .spread-three {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      /* 3. 五張牌 (通用/無視論/馬蹄鐵/盲點)：強制 5欄並排 */
+      /* 說明：為了讓手機版顯示五張並排，字體必須縮小且移除部分描述 */
+      .spread-five:not(.choice) {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 3px; /* 極窄間距 */
+      }
+      
+      /* 針對五張並排的極限壓縮樣式 */
+      .spread-five:not(.choice) .card {
+         padding: 6px 2px;
+         min-height: 80px;
+      }
+      .spread-five:not(.choice) .card-name {
+         font-size: 11px; /* 縮小字體 */
+         margin-bottom: 2px;
+         white-space: normal; /* 允許換行 */
+         line-height: 1.1;
+      }
+      /* 隱藏 "正位/逆位" 文字，依靠顏色識別 */
+      .spread-five:not(.choice) .orientation {
+         display: none; 
+      }
+      /* 隱藏或極簡化位置標籤 */
+      .spread-five:not(.choice) .position-label {
+         font-size: 9px;
+         padding: 1px 2px;
+         white-space: nowrap;
+         overflow: hidden;
+         text-overflow: ellipsis;
+         max-width: 100%;
+      }
+
+      /* 4. 五張牌 (二擇一)：恢復特殊形狀 */
+      .spread-five.choice {
+        grid-template-columns: 1fr 0.4fr 1fr; /* 左右寬，中間窄 */
+        grid-template-areas:
+          "a1 . b1"
+          "a2 . b2"
+          ". c .";
+        gap: 8px;
+      }
+      /* 確保 Grid Area 對應正確 */
+      .spread-five.choice .c1 { grid-area: a1; margin: 0; }
+      .spread-five.choice .c2 { grid-area: a2; margin: 0; }
+      .spread-five.choice .c3 { grid-area: b1; margin: 0; }
+      .spread-five.choice .c4 { grid-area: b2; margin: 0; }
+      .spread-five.choice .c5 { grid-area: c; margin: 0; }
+
+      /* 5. 賽爾特十字：手機版維持直列 (過於複雜無法塞入小螢幕) */
+      .spread-celtic {
+        grid-template-columns: 1fr;
+        grid-template-areas: initial;
+      }
+      .spread-celtic .c1, .spread-celtic .c2, .spread-celtic .c3, 
+      .spread-celtic .c4, .spread-celtic .c5, .spread-celtic .c6,
+      .spread-celtic .c7, .spread-celtic .c8, .spread-celtic .c9, .spread-celtic .c10 {
+        grid-area: auto;
+        transform: none;
+        margin: 0;
+      }
+      .spread-celtic::before {
+        content: "（手機版優化為列表顯示）";
+        display: block;
+        color: #888;
+        font-size: 12px;
+        margin-bottom: 5px;
+      }
+
+      /* 6. 十二張圓盤：縮放適應 */
+      .spread-twelve.circle {
+        width: 760px;
+        position: relative;
+        left: 50%;
+        margin-left: -380px;
+        transform: scale(0.42); /* 再縮小一點確保不切邊 */
+        transform-origin: top center;
+        margin-bottom: -400px;
+        margin-top: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<h1>🔮 老K塔羅牌抽牌（純文字修訂版）</h1>
+<div class="subtle"><a href="https://www.facebook.com/kfacehand" target="_blank" rel="noopener noreferrer">
+    追蹤老K手面相 Facebook
+</a></div>
+
+<div class="subtle"><a href="https://tinmean.github.io/tarot/README.md" target="_blank" rel="noopener noreferrer">
+    抽牌程式說明
+</a></div>
+
+<div class="controls">
+  <label style="width:100%">
+    問題簡述（選填）：
+    <input id="question" type="text" maxlength="20" placeholder="例如：這週工作運勢..." />
+  </label>
+
+  <label>
+    牌陣：
+    <select id="spread">
+      <option value="one">單張牌</option>
+      <option value="three" >三張牌</option>
+      <option value="five" selected>五張牌</option>
+      <option value="twelve">十二張牌</option>
+      <option value="celtic">賽爾特十字</option>
+    </select>
+  </label>
+
+  <label id="threeVariantLabel">
+    類型：
+    <select id="threeVariant">
+      <option value="past_present_future" selected>過去／現在／未來</option>
+      <option value="situation_obstacle_advice">現況／問題／建議</option>
+    </select>
+  </label>
+
+  <label id="fiveVariantLabel" style="display:none">
+    類型：
+    <select id="fiveVariant">
+      <option value="wu_shi_lun" selected>無視論（無位置定義）</option>
+      <option value="choice">二擇一（A vs B）</option>
+      <option value="horseshoe">馬蹄鐵（過去→結果）</option>
+      <option value="blindspots">盲點分析</option>
+    </select>
+  </label>
+
+  <label id="twelveVariantLabel" style="display:none">
+    類型：
+    <select id="twelveVariant">
+      <option value="houses" selected>十二宮位</option>
+      <option value="months">十二個月</option>
+    </select>
+  </label>
+
+  <label id="twelveThemeLabel" style="display:none; align-items:center;">
+    <input type="checkbox" id="twelveTheme" checked /> 加入中心主題牌
+  </label>
+
+  <fieldset>
+    <legend>設定</legend>
+    <label><input type="checkbox" id="useMajor" checked /> 大牌</label>
+    <label><input type="checkbox" id="useMinor" checked /> 小牌</label>
+    <label><input type="checkbox" id="allowReversed" checked /> 逆位</label>
+  </fieldset>
+
+  <button id="drawBtn" type="button">✨ 開始抽牌</button>
+</div>
+
+<div id="result" class="cards"></div>
+
+<!-- Overlay -->
+<div id="cardOverlay" class="card-overlay" aria-hidden="true">
+  <div class="overlay-card" id="overlayContent">
+    <!-- 內容動態生成 -->
+  </div>
+</div>
+
+<hr style="border:0; border-top:1px solid #ddd; margin: 30px 0;">
+
+<h3>📜 歷史紀錄</h3>
+<div style="display:flex; gap:8px; margin-bottom:6px; flex-wrap: wrap;">
+  <button id="copyLatestBtn" type="button" style="background:#444; color:#fff; font-size:14px; padding:6px 12px; border:none; border-radius:8px; cursor:pointer;">複製最新</button>
+  <button id="copyHistoryBtn" type="button" style="background:#666; font-size:14px; padding:6px 12px;">複製全部</button>
+  <button id="clearHistoryBtn" type="button" style="background:#999; font-size:14px; padding:6px 12px;">清除紀錄</button>
+</div>
+<textarea id="history" rows="6" style="width:100%; font-size:14px; line-height:1.5;" placeholder="抽牌結果會自動顯示在此處..." readonly></textarea>
+
+<script>
+  "use strict";
+
+  // ===== 1. 資料庫定義 =====
+  const majorArcana = [
+    "愚者","魔術師","女祭司","皇后","皇帝","教皇","戀人","戰車","力量","隱者",
+    "命運之輪","正義","倒吊人","死神","節制","惡魔","高塔","星星","月亮","太陽","審判","世界"
+  ];
+
+  const minorArcana = (() => {
+    const suits = ["權杖","聖杯","寶劍","錢幣"];
+    const courts = ["侍者","騎士","皇后","國王"];
+    const out = [];
+    for (const suit of suits) {
+      for (let n = 1; n <= 10; n++) out.push({ name: suit + (n===1?"Ace":n), type: "小阿爾克那" });
+      for (const court of courts) out.push({ name: suit + court, type: "宮廷牌" });
+    }
+    return out;
+  })();
+
+  const SPREAD_CONFIG = {
+    three: {
+      past_present_future: ["過去","現在","未來"],
+      situation_obstacle_advice: ["現況","問題","建議"]
+    },
+    five: {
+      wu_shi_lun: [null, null, null, null, null],
+      choice: ["選項A","選項A走向","選項B","選項B走向","建議"],
+      horseshoe: ["過去","現在","障礙","建議","結果"],
+      blindspots: ["表象","事實","忽略","誤判","關鍵"]
+    },
+    twelve: {
+      houses: [
+        "1宮:自我","2宮:財運","3宮:溝通","4宮:家庭","5宮:戀愛/創造","6宮:工作/健康",
+        "7宮:伴侶/合作","8宮:偏財/生死","9宮:遠行/進修","10宮:事業/名望","11宮:人際/社群","12宮:潛意識"
+      ],
+      months: ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"]
+    },
+    celtic: [
+      "1.現況","2.阻礙","3.潛意識","4.過去","5.目標","6.未來",
+      "7.自我","8.環境","9.希望/恐懼","10.結果"
+    ]
+  };
+
+  // ===== 2. 工具函式 =====
+  
+  // 優化：使用 Crypto API 進行更隨機的洗牌
+  function secureShuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const randomBuffer = new Uint32Array(1);
+      window.crypto.getRandomValues(randomBuffer);
+      const j = randomBuffer[0] % (i + 1);
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+  }
+
+  function degToRad(deg) { return deg * Math.PI / 180; }
+
+  function getTimestamp() {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  // 十二張角度計算
+  function getTwelveAngle(variant, index) {
+    const step = 360 / 12;
+    // 12宮位：從左(180度)開始逆時針
+    if (variant === "houses") return 180 - (index * step);
+    // 12月份：從上(-90度)開始順時針
+    return -90 + (index * step);
+  }
+
+  // ===== 3. DOM 與 Overlay 操作 =====
+  const overlay = document.getElementById("cardOverlay");
+  const overlayContent = document.getElementById("overlayContent");
+
+  function openOverlay(data) {
+    overlayContent.innerHTML = `
+      <div class="card-name ${data.reversed ? 'reversed' : 'upright'}">
+        ${data.name} ${data.reversed ? '(逆)' : ''}
+      </div>
+      <div class="orientation">${data.reversed ? '逆位 (Reversed)' : '正位 (Upright)'}</div>
+      <div class="type">${data.type}</div>
+      ${data.position ? `<div class="position-label">${data.position}</div>` : ''}
+      <button class="close-btn" onclick="closeOverlay()">關閉</button>
+    `;
+    overlay.classList.add("active");
+    overlay.setAttribute("aria-hidden", "false");
+  }
+
+  window.closeOverlay = function() {
+    overlay.classList.remove("active");
+    overlay.setAttribute("aria-hidden", "true");
+  };
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) closeOverlay();
+  });
+
+  // ===== 4. 核心邏輯 =====
+  function buildDeck(useMajor, useMinor) {
+    let deck = [];
+    if (useMajor) deck = deck.concat(majorArcana.map(n => ({ name: n, type: "大阿爾克那" })));
+    if (useMinor) deck = deck.concat(minorArcana);
+    return deck;
+  }
+
+  function renderCard(card, position, styleCallback) {
+    const el = document.createElement("div");
+    el.className = "card";
+    
+    // 點擊事件
+    el.onclick = () => openOverlay({ ...card, position });
+
+    el.innerHTML = `
+      <div class="card-name ${card.reversed ? 'reversed' : 'upright'}">${card.name}</div>
+      <div class="orientation">${card.reversed ? '逆位' : '正位'}</div>
+      <div class="type">${card.type}</div>
+      ${position ? `<div class="position-label">${position}</div>` : ''}
+    `;
+
+    if (styleCallback) styleCallback(el);
+    return el;
+  }
+
+  function drawCards() {
+    const spread = document.getElementById("spread").value;
+    const useMajor = document.getElementById("useMajor").checked;
+    const useMinor = document.getElementById("useMinor").checked;
+    const allowReversed = document.getElementById("allowReversed").checked;
+    const question = document.getElementById("question").value.trim();
+
+    if (!useMajor && !useMinor) return alert("請至少選擇一種牌組（大牌或小牌）！");
+
+    // 準備牌庫
+    const deck = buildDeck(useMajor, useMinor);
+    secureShuffle(deck);
+
+    // 計算需求張數
+    let positions = [];
+    let isTwelve = false;
+    let isCeltic = false;
+
+    if (spread === "one") positions = [null];
+    else if (spread === "three") positions = SPREAD_CONFIG.three[document.getElementById("threeVariant").value];
+    else if (spread === "five") positions = SPREAD_CONFIG.five[document.getElementById("fiveVariant").value];
+    else if (spread === "twelve") {
+      positions = SPREAD_CONFIG.twelve[document.getElementById("twelveVariant").value];
+      isTwelve = true;
+    } else if (spread === "celtic") {
+      positions = SPREAD_CONFIG.celtic;
+      isCeltic = true;
+    }
+
+    // 檢查中心主題牌 (僅限十二張)
+    const hasTheme = isTwelve && document.getElementById("twelveTheme").checked;
+    const totalNeeded = positions.length + (hasTheme ? 1 : 0);
+
+    if (deck.length < totalNeeded) return alert(`牌數不足！你需要 ${totalNeeded} 張，但牌庫只有 ${deck.length} 張。`);
+
+    // 開始繪製
+    const container = document.getElementById("result");
+    container.innerHTML = "";
+    container.className = "cards spread-" + spread;
+    if (spread === "five" && document.getElementById("fiveVariant").value === "choice") container.classList.add("choice");
+    if (isTwelve) container.classList.add("circle");
+
+    let cardIdx = 0;
+    let resultText = [];
+
+    // 處理中心主題牌
+    if (hasTheme) {
+      const c = deck[cardIdx++];
+      c.reversed = allowReversed && (window.crypto.getRandomValues(new Uint8Array(1))[0] < 128);
+      resultText.push(`[主題:${c.name}${c.reversed?'(逆)':''}]`);
+      
+      const el = renderCard(c, "核心主題");
+      el.classList.add("center");
+      container.appendChild(el);
+    }
+
+    // 處理主要位置
+    positions.forEach((posName, i) => {
+      const c = deck[cardIdx++];
+      c.reversed = allowReversed && (window.crypto.getRandomValues(new Uint8Array(1))[0] < 128);
+      
+      resultText.push(`${posName || (i+1)}:${c.name}${c.reversed?'(逆)':''}`);
+
+      const el = renderCard(c, posName, (div) => {
+        if (spread === "five" && document.getElementById("fiveVariant").value === "choice") div.classList.add("c"+(i+1));
+        if (spread === "celtic") div.classList.add("c"+(i+1));
+        
+        // 十二張圓形計算
+        if (isTwelve) {
+          const angle = getTwelveAngle(document.getElementById("twelveVariant").value, i);
+          const r = 300; // 半徑
+          const x = 380 + r * Math.cos(degToRad(angle)); // 380 是 760/2
+          const y = 380 + r * Math.sin(degToRad(angle));
+          div.style.left = x + "px";
+          div.style.top = y + "px";
+        }
+      });
+      container.appendChild(el);
+    });
+
+    // 紀錄
+    const historyLine = `【${getTimestamp()}】${question ? `[問:${question}] ` : ''}${resultText.join(" / ")}`;
+    const historyArea = document.getElementById("history");
+    historyArea.value = historyLine + "\n" + historyArea.value;
+    
+    // 存入 Cookie
+    document.cookie = "tarot_history=" + encodeURIComponent(historyArea.value) + "; max-age=" + (86400*30);
+  }
+
+  // ===== 5. UI 事件綁定 =====
+  function updateUI() {
+    const val = document.getElementById("spread").value;
+    document.getElementById("threeVariantLabel").style.display = val === "three" ? "inline-flex" : "none";
+    document.getElementById("fiveVariantLabel").style.display = val === "five" ? "inline-flex" : "none";
+    document.getElementById("twelveVariantLabel").style.display = val === "twelve" ? "inline-flex" : "none";
+    document.getElementById("twelveThemeLabel").style.display = val === "twelve" ? "inline-flex" : "none";
+  }
+
+  document.getElementById("spread").addEventListener("change", updateUI);
+  document.getElementById("drawBtn").addEventListener("click", drawCards);
+  
+  // 新增：複製最新一筆紀錄
+  document.getElementById("copyLatestBtn").addEventListener("click", () => {
+    const h = document.getElementById("history");
+    if (!h.value) return;
+    
+    // 取得第一行（最新一筆）
+    const latest = h.value.split('\n')[0];
+    
+    // 建立暫存 Textarea 來複製
+    const temp = document.createElement("textarea");
+    temp.value = latest;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand("copy");
+    document.body.removeChild(temp);
+    
+    // 按鈕回饋
+    const btn = document.getElementById("copyLatestBtn");
+    const originalText = btn.innerText;
+    btn.innerText = "已複製！";
+    setTimeout(() => {
+        btn.innerText = originalText;
+    }, 1000);
+  });
+
+  document.getElementById("copyHistoryBtn").addEventListener("click", () => {
+    const h = document.getElementById("history");
+    h.select();
+    document.execCommand("copy"); // 兼容性最好的複製方式
+  });
+  
+  document.getElementById("clearHistoryBtn").addEventListener("click", () => {
+    if(confirm("確定清空紀錄？")) {
+      document.getElementById("history").value = "";
+      document.cookie = "tarot_history=; max-age=0";
+    }
+  });
+
+  // 讀取歷史
+  const match = document.cookie.match(/tarot_history=([^;]+)/);
+  if (match) document.getElementById("history").value = decodeURIComponent(match[1]);
+
+  updateUI();
+</script>
+</body>
+</html>
