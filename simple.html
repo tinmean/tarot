@@ -397,7 +397,8 @@
   <label id="threeVariantLabel">
     類型：
     <select id="threeVariant">
-      <option value="past_present_future" selected>過去／現在／未來</option>
+      <option value="wu_shi_lun_3" selected>三張無視論（自由解讀）</option>
+      <option value="past_present_future">過去／現在／未來</option>
       <option value="situation_obstacle_advice">現況／問題／建議</option>
     </select>
   </label>
@@ -475,6 +476,7 @@
 
   const SPREAD_CONFIG = {
     three: {
+      wu_shi_lun_3: [null, null, null],
       past_present_future: ["過去","現在","未來"],
       situation_obstacle_advice: ["現況","問題","建議"]
     },
@@ -585,6 +587,7 @@
     const useMinor = document.getElementById("useMinor").checked;
     const allowReversed = document.getElementById("allowReversed").checked;
     const question = document.getElementById("question").value.trim();
+    const threeVariant = document.getElementById("threeVariant").value;
 
     if (!useMajor && !useMinor) return alert("請至少選擇一種牌組（大牌或小牌）！");
 
@@ -598,7 +601,7 @@
     let isCeltic = false;
 
     if (spread === "one") positions = [null];
-    else if (spread === "three") positions = SPREAD_CONFIG.three[document.getElementById("threeVariant").value];
+    else if (spread === "three") positions = SPREAD_CONFIG.three[threeVariant];
     else if (spread === "five") positions = SPREAD_CONFIG.five[document.getElementById("fiveVariant").value];
     else if (spread === "twelve") {
       positions = SPREAD_CONFIG.twelve[document.getElementById("twelveVariant").value];
@@ -623,6 +626,7 @@
 
     let cardIdx = 0;
     let resultText = [];
+    const isThreeNeglect = spread === "three" && threeVariant === "wu_shi_lun_3";
 
     // 處理中心主題牌
     if (hasTheme) {
@@ -640,7 +644,8 @@
       const c = deck[cardIdx++];
       c.reversed = allowReversed && (window.crypto.getRandomValues(new Uint8Array(1))[0] < 128);
       
-      resultText.push(`${posName || (i+1)}:${c.name}${c.reversed?'(逆)':''}`);
+      if (isThreeNeglect) resultText.push(`${c.name}${c.reversed?'(逆)':''}`);
+      else resultText.push(`${posName || (i+1)}:${c.name}${c.reversed?'(逆)':''}`);
 
       const el = renderCard(c, posName, (div) => {
         if (spread === "five" && document.getElementById("fiveVariant").value === "choice") div.classList.add("c"+(i+1));

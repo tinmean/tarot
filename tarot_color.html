@@ -275,6 +275,14 @@
       </div>
     </div>
 
+    <div class="control-group">
+      <label for="deckStyle">牌組樣式</label>
+      <select id="deckStyle">
+        <option value="rider">偉特塔羅（預設）</option>
+        <option value="marseille">馬賽塔羅</option>
+      </select>
+    </div>
+
     <button id="drawBtn">✨ 開始洗牌抽牌</button>
   </div>
 
@@ -301,7 +309,6 @@
   </div>
 
   <script>
-    const IMAGE_BASE_URL = "./images/";
     const STORAGE_KEY = "tarot_history_log"; // 定義儲存的 Key
 
     const MAJOR_NAMES = ["愚者", "魔術師", "女祭司", "皇后", "皇帝", "教皇", "戀人", "戰車", "力量", "隱者", "命運之輪", "正義", "倒吊人", "死神", "節制", "惡魔", "高塔", "星星", "月亮", "太陽", "審判", "世界"];
@@ -311,11 +318,29 @@
       { name: "寶劍", code: "swords" },
       { name: "錢幣", code: "pents" }
     ];
+    const TAROT_DECKS = {
+      rider: {
+        label: "偉特塔羅",
+        imageBaseUrl: "./images/",
+        majorFile: i => `maj${String(i).padStart(2, '0')}.jpg`,
+        suitCodeMap: { wands: "wands", cups: "cups", swords: "swords", pents: "pents" }
+      },
+      marseille: {
+        label: "馬賽塔羅",
+        imageBaseUrl: "./mar_images/",
+        majorFile: i => {
+          const marseilleIndex = i === 8 ? 11 : (i === 11 ? 8 : i);
+          return `a${String(marseilleIndex + 1).padStart(2, '0')}.jpg`;
+        },
+        suitCodeMap: { wands: "b", cups: "c", swords: "e", pents: "d" }
+      }
+    };
 
     // 牌陣座標隨大卡片尺寸調整 (以 140px 為基準)
     const SPREAD_CONFIG = {
       "1": { "one": { type: 'linear', labels: ['啟示'] } },
       "3": {
+        "neglect3": { type: 'linear', labels: ['', '', ''], hideTags: true, anonymousResult: true },
         "ppf": { type: 'linear', labels: ['過去', '現在', '未來'] },
         "spa": { type: 'linear', labels: ['現況', '問題', '建議'] },
         "bms": { type: 'linear', labels: ['身', '心', '靈'] }
@@ -344,7 +369,7 @@
     };
 
     const SPREAD_NAMES = {
-      "one": "單張占卜", "ppf": "過去/現在/未來", "spa": "現況/問題/建議", "bms": "身/心/靈",
+      "one": "單張占卜", "ppf": "過去/現在/未來", "spa": "現況/問題/建議", "bms": "身/心/靈", "neglect3": "三張無視論",
       "neglect": "五張無視論", "choice": "二擇一牌陣", "relation": "感情關係狀態陣",
       "weekly": "週運勢 (七天)", "celtic": "賽爾特十字 (10張大陣)", "houses": "十二宮位 (逆時針)", "months": "十二個月運勢"
     };
@@ -362,14 +387,20 @@
       }
     }
 
-    function getDeck(incMajor, incMinor) {
+    function getSelectedDeckConfig() {
+      const key = document.getElementById('deckStyle')?.value || 'rider';
+      return TAROT_DECKS[key] || TAROT_DECKS.rider;
+    }
+
+    function getDeck(incMajor, incMinor, deckConfig) {
       let deck = [];
-      if (incMajor) MAJOR_NAMES.forEach((name, i) => deck.push({ name, file: `maj${String(i).padStart(2, '0')}.jpg` }));
+      if (incMajor) MAJOR_NAMES.forEach((name, i) => deck.push({ name, file: deckConfig.majorFile(i) }));
       if (incMinor) {
         SUITS.forEach(suit => {
           for (let i = 1; i <= 14; i++) {
             let n = i === 1 ? "Ace" : (i === 11 ? "侍者" : (i === 12 ? "騎士" : (i === 13 ? "皇后" : (i === 14 ? "國王" : i))));
-            deck.push({ name: `${suit.name}${n}`, file: `${suit.code}${String(i).padStart(2, '0')}.jpg` });
+            const suitFileCode = deckConfig.suitCodeMap[suit.code] || suit.code;
+            deck.push({ name: `${suit.name}${n}`, file: `${suitFileCode}${String(i).padStart(2, '0')}.jpg` });
           }
         });
       }
@@ -430,10 +461,11 @@
       const allowRev = document.getElementById('allowRev').checked;
       const count = document.getElementById('cardCount').value;
       const variantKey = document.getElementById('spreadVariant').value;
+      const deckConfig = getSelectedDeckConfig();
        
       if (!variantKey) return;
       const config = SPREAD_CONFIG[count][variantKey];
-      let deck = getDeck(incMajor, incMinor);
+      let deck = getDeck(incMajor, incMinor, deckConfig);
       if (deck.length < config.labels.length) {
         alert("牌數不足，請檢查大牌/小牌勾選設定！");
         return;
@@ -453,7 +485,8 @@
       config.labels.forEach((label, i) => {
         const cardData = deck[i];
         const isRev = allowRev && (window.crypto.getRandomValues(new Uint8Array(1))[0] > 127);
-        results.push(`${label}:${cardData.name}${isRev?'(逆)':''}`);
+        const resultText = `${cardData.name}${isRev ? '(逆)' : ''}`;
+        results.push(config.anonymousResult ? resultText : `${label}:${resultText}`);
 
         const slot = document.createElement('div');
         slot.className = 'card-slot';
@@ -481,7 +514,7 @@
         }
 
         const img = document.createElement('img');
-        img.src = `${IMAGE_BASE_URL}${cardData.file}`;
+        img.src = `${deckConfig.imageBaseUrl}${cardData.file}`;
         img.onerror = () => {
           img.style.display = 'none';
           const fb = document.createElement('div');
@@ -509,7 +542,7 @@
           overlayImg.src = img.src;
           overlayImg.className = isRev ? 'reversed' : '';
           document.getElementById('overlayTitle').innerText = cardData.name + (isRev ? ' (逆位)' : ' (正位)');
-          document.getElementById('overlayPos').innerText = `牌陣位置：${label}`;
+          document.getElementById('overlayPos').innerText = config.anonymousResult ? '' : `牌陣位置：${label}`;
           document.getElementById('overlay').classList.add('active');
         };
       });
@@ -518,7 +551,7 @@
       autoScale();
 
       const q = document.getElementById('question').value || "未設問";
-      const log = `【${new Date().toLocaleString()}】 ${q}\n牌陣：${SPREAD_NAMES[variantKey]}\n結果：${results.join(' / ')}\n\n`;
+      const log = `【${new Date().toLocaleString()}】 ${q}\n牌組：${deckConfig.label}\n牌陣：${SPREAD_NAMES[variantKey]}\n結果：${results.join(' / ')}\n\n`;
       
       const historyArea = document.getElementById('history');
       historyArea.value = log + historyArea.value;
