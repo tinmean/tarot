@@ -121,6 +121,22 @@
       font-size: 15px;
     }
 
+    .license-note {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.5;
+      background: rgba(241, 196, 15, 0.08);
+      border: 1px solid rgba(241, 196, 15, 0.25);
+      color: #e8e8e8;
+      display: none;
+    }
+    .license-note a {
+      color: var(--accent-color);
+      text-decoration: underline;
+    }
+
     button {
       cursor: pointer;
       font-weight: bold;
@@ -337,6 +353,12 @@
         <option value="rider">偉特塔羅（預設）</option>
         <option value="marseille">馬賽塔羅</option>
       </select>
+      <div id="marseilleLicenseNotice" class="license-note">
+        馬賽牌圖像使用 CBD Tarot de Marseille（Dr. Yoav Ben-Dov）。請保留署名與連結：
+        <a href="https://cbdtarot.com/" target="_blank" rel="noopener noreferrer">cbdtarot.com</a>。
+        依 CC BY-NC-SA 3.0（非商用、需署名、相同方式分享）使用：
+        <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener noreferrer">授權條款</a>。
+      </div>
     </div>
 
     <button id="drawBtn">✨ 開始洗牌抽牌</button>
@@ -442,6 +464,13 @@
         opt.innerText = SPREAD_NAMES[key] || key;
         variantSelect.appendChild(opt);
       }
+    }
+
+    function updateDeckCopyrightNotice() {
+      const notice = document.getElementById('marseilleLicenseNotice');
+      const deckKey = document.getElementById('deckStyle')?.value || 'rider';
+      if (!notice) return;
+      notice.style.display = deckKey === 'marseille' ? 'block' : 'none';
     }
 
     function getSelectedDeckConfig() {
@@ -652,11 +681,13 @@
 
     window.addEventListener('resize', autoScale);
     document.getElementById('cardCount').addEventListener('change', updateSpreadVariants);
+    document.getElementById('deckStyle').addEventListener('change', updateDeckCopyrightNotice);
     document.getElementById('drawBtn').onclick = draw;
     
     // --- 新增：網頁載入時讀取紀錄 ---
     window.onload = () => { 
       updateSpreadVariants(); 
+      updateDeckCopyrightNotice();
       
       // 讀取 LocalStorage
       const savedHistory = localStorage.getItem(STORAGE_KEY);
